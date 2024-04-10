@@ -1,5 +1,6 @@
 package net.cakemine.playerservers.velocity;
 
+import net.cakemine.playerservers.velocity.objects.PlayerServer;
 import net.cakemine.playerservers.velocity.commands.*;
 import net.cakemine.playerservers.velocity.wrapper.*;
 import net.kyori.adventure.pointer.Pointered;
@@ -30,8 +31,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
-@Plugin(id = "playerservers", name = "PlayerServers", version = "2.0.0-b5",
-url = "https://discord.gg/JmxAGSdcuR", description = "give your players their own server", authors = {"wildmaster84"})
 public class PlayerServers {
     public ProxyServer proxy;
     private PlayerServers pl;
@@ -42,12 +41,12 @@ public class PlayerServers {
     public TemplateManager templateManager;
     public PlayerServerAdmin playerServerAdmin;
     public PluginSender sender;
-    public PlayerServer playerServer;
+    public PlayerServerCMD playerServer;
     protected static PlayerServersAPI api;
     public Utils utils;
     public Yaml yaml;
     protected HashMap<String, Object> config;
-    protected HashMap<String, HashMap<String, HashMap<String, String>>> serverStore;
+    public HashMap<String, HashMap<String, HashMap<String, HashMap<String, String>>>> serverStore;
     protected HashMap<String, HashMap<String, String>> messages;
     protected HashMap<String, Object> guis;
     protected HashMap<String, Object> playerStore;
@@ -149,12 +148,12 @@ public class PlayerServers {
         PlayerServers.api = new PlayerServersAPI(this);
         this.reload();
         this.setupScripts();
-        this.playerServer = new PlayerServer(this, this.psCommand);
+        this.playerServer = new PlayerServerCMD(this, this.psCommand);
         repeatTask = new RepeatTasks(this);
         this.pl.proxy.getScheduler().buildTask(this.pl, () -> {
         	repeatTask.run();
         }).delay(30L, TimeUnit.SECONDS).repeat(30L, TimeUnit.SECONDS).schedule();
-        this.proxy.getCommandManager().register(this.psCommand, new PlayerServer(this, this.psCommand), "pserver", "psrv", "ps");
+        this.proxy.getCommandManager().register(this.psCommand, new PlayerServerCMD(this, this.psCommand), "pserver", "psrv", "ps");
     	this.proxy.getCommandManager().register("playerserveradmin", new PlayerServerAdmin(this), "pserveradmin", "psrvadmin", "psa");
 
         this.loadOnlineServers();
@@ -195,7 +194,7 @@ public class PlayerServers {
         if (!this.psCommand.equalsIgnoreCase(psCommand)) {
         	this.proxy.getCommandManager().unregister(psCommand);
         	this.proxy.getCommandManager().unregister("playerserveradmin");
-        	this.proxy.getCommandManager().register(this.psCommand, new PlayerServer(this, this.psCommand), "pserver", "psrv", "ps");
+        	this.proxy.getCommandManager().register(this.psCommand, new PlayerServerCMD(this, this.psCommand), "pserver", "psrv", "ps");
         	this.proxy.getCommandManager().register("playerserveradmin", new PlayerServerAdmin(this), "pserveradmin", "psrvadmin", "psa");
         }
         if (this.ctrl == null && this.wrapper.equalsIgnoreCase("default")) {
@@ -872,19 +871,8 @@ public class PlayerServers {
         this.utils.debug("servers config class = " + this.serverStore.get("servers").getClass());
         this.serverManager.serverMap.clear();
         if (this.serverStore.get("servers") != null ) {
-        	this.serverStore.get("servers").keySet().forEach(server -> {
-            	HashMap<String, String> settings = new HashMap<>();
-            	settings.put("server-name", this.serverStore.get("servers").get(server).get("server-name").toString());
-            	settings.put("player-name", this.serverStore.get("servers").get(server).get("player-name").toString());
-            	settings.put("expire-date", this.serverStore.get("servers").get(server).get("expire-date").toString());
-            	settings.put("motd", this.serverStore.get("servers").get(server).get("motd").toString());
-            	settings.put("memory", this.serverStore.get("servers").get(server).get("memory").toString());
-            	settings.put("port", this.serverStore.get("servers").get(server).get("port").toString());
-            	settings.put("white-list", this.serverStore.get("servers").get(server).get("white-list").toString());
-            	settings.put("max-players", this.serverStore.get("servers").get(server).get("max-players").toString());
-            	settings.put("server-ip", this.serverStore.get("servers").get(server).get("server-ip").toString());
-            	
-            	this.serverManager.serverMap.put(server.toString(), settings);
+        	((HashMap<String,HashMap<String,HashMap<String,String>>>)this.serverStore.get("servers")).keySet().forEach(server -> {
+            	this.serverManager.serverMap.put(server, new PlayerServer(server));
             });
         }
         this.utils.log(this.serverManager.serverMap.size() + " player servers saved.");

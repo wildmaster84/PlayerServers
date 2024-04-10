@@ -1,6 +1,7 @@
 package net.cakemine.playerservers.velocity.commands;
 
 import net.cakemine.playerservers.velocity.*;
+import net.cakemine.playerservers.velocity.events.PSReloadEvent;
 import net.kyori.adventure.pointer.Pointered;
 
 import java.util.concurrent.*;
@@ -706,7 +707,7 @@ public class PlayerServerAdmin implements SimpleCommand {
                     this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(uuid, this.pl.msgMap.get("invalid-memory-format")));
                 }
                 else {
-                    int memStringToInt = this.pl.utils.memStringToInt(((HashMap) this.pl.serverManager.serverMap.get(uuid)).get("memory").toString().split("\\/")[0]);
+                    int memStringToInt = this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(uuid).getSetting("memory").toString().split("\\/")[0]);
                     if (array[2].matches("(\\+|-)[0-9]+([Mm]|[Gg])")) {
                         String replaceAll = array[2].replaceAll("[A-Za-z0-9]", "");
                         String s;
@@ -720,15 +721,15 @@ public class PlayerServerAdmin implements SimpleCommand {
                             }
                             s = String.valueOf(memStringToInt - this.pl.utils.memStringToInt(array[2].replaceAll("-", ""))) + "M";
                         }
-                        if (this.pl.utils.memStringToInt(s) < this.pl.utils.memStringToInt(((HashMap) this.pl.serverManager.serverMap.get(uuid)).get("memory").toString().split("\\/")[1])) {
+                        if (this.pl.utils.memStringToInt(s) < this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(uuid).getSetting("memory").toString().split("\\/")[1])) {
                             this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(uuid, this.pl.msgMap.get("max-lessthan-start")));
                             return;
                         }
-                        this.pl.serverManager.setServerInfo(uuid, "memory", s + "/" + ((HashMap) this.pl.serverManager.serverMap.get(uuid)).get("memory").toString().split("\\/")[1]);
+                        this.pl.serverManager.setServerInfo(uuid, "memory", s + "/" + this.pl.serverManager.serverMap.get(uuid).getSetting("memory").toString().split("\\/")[1]);
                         this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(uuid, this.pl.msgMap.get("max-memory-changed")));
                     }
                     else {
-                        this.pl.serverManager.setServerInfo(uuid, "memory", array[2] + "/" + ((HashMap) this.pl.serverManager.serverMap.get(uuid)).get("memory").toString().split("\\/")[1]);
+                        this.pl.serverManager.setServerInfo(uuid, "memory", array[2] + "/" + this.pl.serverManager.serverMap.get(uuid).getSetting("memory").toString().split("\\/")[1]);
                         this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(uuid, this.pl.msgMap.get("max-memory-changed")));
                     }
                 }
@@ -753,7 +754,7 @@ public class PlayerServerAdmin implements SimpleCommand {
                     this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(uuid, this.pl.msgMap.get("invalid-memory-format")));
                 }
                 else {
-                    int memStringToInt = this.pl.utils.memStringToInt(((HashMap) this.pl.serverManager.serverMap.get(uuid)).get("memory").toString().split("\\/")[1]);
+                    int memStringToInt = this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(uuid).getSetting("memory").toString().split("\\/")[1]);
                     if (array[2].matches("(\\+|-)[0-9]+([Mm]|[Gg])")) {
                         String replaceAll = array[2].replaceAll("[A-Za-z0-9]", "");
                         String s;
@@ -767,15 +768,15 @@ public class PlayerServerAdmin implements SimpleCommand {
                             }
                             s = String.valueOf(memStringToInt - this.pl.utils.memStringToInt(array[2].replaceAll("-", ""))) + "M";
                         }
-                        if (this.pl.utils.memStringToInt(s) > this.pl.utils.memStringToInt(((HashMap) this.pl.serverManager.serverMap.get(uuid)).get("memory").toString().split("\\/")[0])) {
+                        if (this.pl.utils.memStringToInt(s) > this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(uuid).getSetting("memory").toString().split("\\/")[0])) {
                             this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(uuid, this.pl.msgMap.get("start-greater-max")));
                             return;
                         }
-                        this.pl.serverManager.setServerInfo(uuid, "memory", ((HashMap) this.pl.serverManager.serverMap.get(uuid)).get("memory").toString().split("\\/")[1] + "/" + s);
+                        this.pl.serverManager.setServerInfo(uuid, "memory", this.pl.serverManager.serverMap.get(uuid).getSetting("memory").toString().split("\\/")[1] + "/" + s);
                         this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(uuid, this.pl.msgMap.get("start-memory-changed")));
                     }
                     else {
-                        this.pl.serverManager.setServerInfo(uuid, "memory", ((HashMap) this.pl.serverManager.serverMap.get(uuid)).get("memory").toString().split("\\/")[0] + "/" + array[2]);
+                        this.pl.serverManager.setServerInfo(uuid, "memory", this.pl.serverManager.serverMap.get(uuid).getSetting("memory").toString().split("\\/")[0] + "/" + array[2]);
                         this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(uuid, this.pl.msgMap.get("start-memory-changed")));
                     }
                 }
@@ -800,6 +801,8 @@ public class PlayerServerAdmin implements SimpleCommand {
     }
     
     public void reloadCommand(CommandSource commandSender, String[] array) {
+    	PSReloadEvent event = new PSReloadEvent();
+    	this.pl.eventManager.fire(event);
         this.pl.reload();
         this.pl.utils.sendMsg(commandSender, this.pl.msgMap.get("config-reloaded"));
     }

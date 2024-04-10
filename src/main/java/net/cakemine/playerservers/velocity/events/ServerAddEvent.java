@@ -51,7 +51,7 @@ public class ServerAddEvent implements ResultedEvent<GenericResult>{
     }
     
     public void setXmx(int n) {
-        this.pl.serverManager.setServerInfo(this.uuid.toString(), "memory", n + "M/" + this.pl.serverManager.serverMap.get(this.uuid.toString()).get("memory").toString().split("\\/")[1]);
+        this.pl.serverManager.setServerInfo(this.uuid.toString(), "memory", n + "M/" + this.pl.serverManager.serverMap.get(this.uuid.toString()).getSetting("memory").toString().split("\\/")[1]);
     }
     
     public int getXms() {
@@ -59,7 +59,7 @@ public class ServerAddEvent implements ResultedEvent<GenericResult>{
     }
     
     public void setXms(int n) {
-        this.pl.serverManager.setServerInfo(this.uuid.toString(), "memory", this.pl.serverManager.serverMap.get(this.uuid.toString()).get("memory").toString().split("\\/")[0] + "/" + n + "M");
+        this.pl.serverManager.setServerInfo(this.uuid.toString(), "memory", this.pl.serverManager.serverMap.get(this.uuid.toString()).getSetting("memory").toString().split("\\/")[0] + "/" + n + "M");
     }
     
     public int getPort() {

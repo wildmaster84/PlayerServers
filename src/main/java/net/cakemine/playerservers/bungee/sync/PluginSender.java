@@ -95,7 +95,6 @@ public class PluginSender
         Server server = proxiedPlayer.getServer();
         String uuid = proxiedPlayer.getUniqueId().toString();
         HashMap<String, Object> serverData = new HashMap<>();
-        serverData.put("sender-uuid", uuid);
         serverData.put("has-server", String.valueOf(this.pl.serverManager.hasServer(uuid)));
         serverData.put("use-expire", this.pl.utils.hasPerm(uuid, "playerservers.bypassexpire") ? "false" : String.valueOf(this.pl.useExpiry));
         serverData.put("time-left", String.valueOf(this.pl.expiryTracker.timeLeft(uuid)));
@@ -105,15 +104,15 @@ public class PluginSender
                 
         if (this.pl.serverManager.hasServer(uuid)) {
         	serverData.put("is-online", String.valueOf(!this.pl.utils.isPortOpen(this.pl.utils.getSrvIp(uuid), this.pl.utils.getSrvPort(uuid))));
-            serverData.put("server-name", String.valueOf(this.pl.serverManager.serverMap.get(uuid).fromHashMap().get("server-name")));
-            serverData.put("expire-date", String.valueOf(this.pl.serverManager.serverMap.get(uuid).fromHashMap().get("expire-date")));
-            serverData.put("motd", String.valueOf(this.pl.serverManager.serverMap.get(uuid).fromHashMap().get("motd")));
-            serverData.put("memory", String.valueOf(this.pl.serverManager.serverMap.get(uuid).fromHashMap().get("memory")));
-            serverData.put("port", String.valueOf(this.pl.serverManager.serverMap.get(uuid).fromHashMap().get("port")));
-            serverData.put("player-name", String.valueOf(this.pl.serverManager.serverMap.get(uuid).fromHashMap().get("player-name")));
-            serverData.put("white-list", String.valueOf(this.pl.serverManager.serverMap.get(uuid).fromHashMap().get("white-list")));
-            serverData.put("max-players", String.valueOf(this.pl.serverManager.serverMap.get(uuid).fromHashMap().get("max-players")));
-            serverData.put("server-ip", String.valueOf(this.pl.serverManager.serverMap.get(uuid).fromHashMap().get("server-ip")));
+            serverData.put("server-name", String.valueOf(this.pl.serverManager.serverMap.get(uuid).getSetting("server-name")));
+            serverData.put("expire-date", String.valueOf(this.pl.serverManager.serverMap.get(uuid).getSetting("expire-date")));
+            serverData.put("motd", String.valueOf(this.pl.serverManager.serverMap.get(uuid).getSetting("motd")));
+            serverData.put("memory", String.valueOf(this.pl.serverManager.serverMap.get(uuid).getSetting("memory")));
+            serverData.put("port", String.valueOf(this.pl.serverManager.serverMap.get(uuid).getSetting("port")));
+            serverData.put("player-name", String.valueOf(this.pl.serverManager.serverMap.get(uuid).getSetting("player-name")));
+            serverData.put("white-list", String.valueOf(this.pl.serverManager.serverMap.get(uuid).getSetting("white-list")));
+            serverData.put("max-players", String.valueOf(this.pl.serverManager.serverMap.get(uuid).getSetting("max-players")));
+            serverData.put("server-ip", String.valueOf(this.pl.serverManager.serverMap.get(uuid).getSetting("server-ip")));
         } else {
         	serverData.put("is-online", String.valueOf(false));
             serverData.put("server-name", "none");
@@ -130,9 +129,9 @@ public class PluginSender
         try {
 			String jsonString = mapper.writeValueAsString(serverData);
 			dataOutput.writeUTF("controlGUI");
-	        
 	        this.pl.utils.debug("Opening controlGUI with info: " + jsonString);
 	        dataOutput.writeUTF(Base64.getEncoder().encodeToString(jsonString.getBytes()));
+	        dataOutput.writeUTF(uuid);
 	        this.sendPluginMsg(server, dataOutput);
 		} catch (JsonProcessingException e) {
 			// TODO Auto-generated catch block
@@ -169,19 +168,13 @@ public class PluginSender
             dataMap.put("expire-date", String.valueOf(this.pl.serverManager.getServerInfo(ownerId, "expire-date")));
             dataMap.put("white-list", String.valueOf(this.pl.serverManager.getServerInfo(ownerId, "white-list")));
             dataMap.put("time-left", String.valueOf(this.pl.expiryTracker.timeLeft(ownerId)));
-            dataMap.put("sender-uuid", proxiedPlayer.getUniqueId().toString());
             serverMap.put(ownerId, dataMap);
-        }
-        
-        if (serverMap.isEmpty()) {
-        	HashMap<String, String> dataMap = new HashMap<>();
-        	dataMap.put("sender-uuid", proxiedPlayer.getUniqueId().toString());
-        	serverMap.put(proxiedPlayer.getUniqueId().toString(), dataMap);
         }
         
 		try {
 			String jsonString = mapper.writeValueAsString(serverMap);
 			dataOutput.writeUTF(Base64.getEncoder().encodeToString(jsonString.getBytes()));
+			dataOutput.writeUTF(proxiedPlayer.getUniqueId().toString());
 	        this.sendPluginMsg(server, dataOutput);
 		} catch (JsonProcessingException e) {
 			// TODO Auto-generated catch block

@@ -10,6 +10,8 @@ import java.io.*;
 import java.net.*;
 import java.util.regex.*;
 
+import org.bukkit.plugin.java.JavaPlugin;
+
 import net.cakemine.playerservers.bungee.objects.PlayerServer;
 import net.md_5.bungee.api.*;
 import net.md_5.bungee.api.connection.*;
@@ -138,15 +140,15 @@ public class Utils
             this.pl.utils.log(Level.WARNING, "Tried to get server IP for " + s + "'s server, but server did not exist in the server map (servers.yml)!");
             return "127.0.0.1";
         }
-        if (this.pl.serverManager.serverMap.get(s).fromHashMap().containsKey("server-ip")) {
-            return this.pl.serverManager.serverMap.get(s).fromHashMap().get("server-ip");
+        if (this.pl.serverManager.serverMap.get(s).getAllSettings().containsKey("server-ip")) {
+            return this.pl.serverManager.serverMap.get(s).getSetting("server-ip");
         }
         this.pl.serverManager.verifySettings(s);
         String setting;
         if (s == null || s.equalsIgnoreCase("null") || (setting = this.pl.settingsManager.getSetting(s, "server-ip")) == null) {
             return "127.0.0.1";
         }
-        if (this.pl.serverManager.hasServer(s) && (this.pl.serverManager.getServerInfo(s, "server-ip") == null || this.pl.serverManager.getServerInfo(s, "server-ip").equalsIgnoreCase("null") || !this.pl.serverManager.serverMap.get(s).fromHashMap().get("server-ip").equalsIgnoreCase(setting))) {
+        if (this.pl.serverManager.hasServer(s) && (this.pl.serverManager.getServerInfo(s, "server-ip") == null || this.pl.serverManager.getServerInfo(s, "server-ip").equalsIgnoreCase("null") || !this.pl.serverManager.serverMap.get(s).getSetting("server-ip").equalsIgnoreCase(setting))) {
             this.pl.serverManager.setServerInfo(s, "server-ip", setting);
         }
         return setting;
@@ -234,7 +236,8 @@ public class Utils
     
     public String getServerUUID(String s) {
         for (Map.Entry<String, PlayerServer> entry : this.pl.serverManager.serverMap.entrySet()) {
-            if (s.equals(entry.getValue().fromHashMap().get("server-name"))) {
+        	// Why the hell is this not returning the uuid??
+            if (s.equals(entry.getValue().getSetting("server-name"))) {
                 return entry.getKey().toString();
             }
         }

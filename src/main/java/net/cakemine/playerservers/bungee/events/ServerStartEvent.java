@@ -60,7 +60,7 @@ public class ServerStartEvent extends Event implements Cancellable
     }
     
     public void setXmx(int n) {
-        this.pl.serverManager.setServerInfo(this.uuid.toString(), "memory", n + "M/" + this.pl.serverManager.serverMap.get(this.uuid.toString()).fromHashMap().get("memory").split("\\/")[1]);
+        this.pl.serverManager.setServerInfo(this.uuid.toString(), "memory", n + "M/" + this.pl.serverManager.serverMap.get(this.uuid.toString()).getSetting("memory").split("\\/")[1]);
     }
     
     public int getXms() {
@@ -68,7 +68,7 @@ public class ServerStartEvent extends Event implements Cancellable
     }
     
     public void setXms(int n) {
-        this.pl.serverManager.setServerInfo(this.uuid.toString(), "memory", this.pl.serverManager.serverMap.get(this.uuid.toString()).fromHashMap().get("memory").split("\\/")[0] + "/" + n + "M");
+        this.pl.serverManager.setServerInfo(this.uuid.toString(), "memory", this.pl.serverManager.serverMap.get(this.uuid.toString()).getSetting("memory").split("\\/")[0] + "/" + n + "M");
     }
     
     public int getPort() {

@@ -44,7 +44,7 @@ public class RepeatTasks implements Runnable
                     if (this.pl.serverManager.addedServers.containsKey(string)) {
                         n = System.currentTimeMillis() - Long.valueOf(((HashMap) this.pl.serverManager.addedServers.get(string)).get("time").toString());
                     }
-                    if (!this.pl.utils.isPortOpen(this.pl.utils.getSrvIp(ownerId), port) || ownerId == null || PlayerServer.chill.contains(ownerId) || n <= 90000L) {
+                    if (!this.pl.utils.isPortOpen(this.pl.utils.getSrvIp(ownerId), port) || ownerId == null || PlayerServerCMD.chill.contains(ownerId) || n <= 90000L) {
                         continue;
                     }
                     this.pl.running.remove(ownerId);

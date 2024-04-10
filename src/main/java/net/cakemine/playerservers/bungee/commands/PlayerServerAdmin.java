@@ -535,7 +535,7 @@ public class PlayerServerAdmin extends Command
                     this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(uuid, this.pl.msgMap.get("invalid-memory-format")));
                 }
                 else {
-                    int memStringToInt = this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(uuid).fromHashMap().get("memory").split("\\/")[0]);
+                    int memStringToInt = this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(uuid).getSetting("memory").split("\\/")[0]);
                     if (array[2].matches("(\\+|-)[0-9]+([Mm]|[Gg])")) {
                         String replaceAll = array[2].replaceAll("[A-Za-z0-9]", "");
                         String s;
@@ -549,15 +549,15 @@ public class PlayerServerAdmin extends Command
                             }
                             s = String.valueOf(memStringToInt - this.pl.utils.memStringToInt(array[2].replaceAll("-", ""))) + "M";
                         }
-                        if (this.pl.utils.memStringToInt(s) < this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(uuid).fromHashMap().get("memory").split("\\/")[1])) {
+                        if (this.pl.utils.memStringToInt(s) < this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(uuid).getSetting("memory").split("\\/")[1])) {
                             this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(uuid, this.pl.msgMap.get("max-lessthan-start")));
                             return;
                         }
-                        this.pl.serverManager.setServerInfo(uuid, "memory", s + "/" + this.pl.serverManager.serverMap.get(uuid).fromHashMap().get("memory").split("\\/")[1]);
+                        this.pl.serverManager.setServerInfo(uuid, "memory", s + "/" + this.pl.serverManager.serverMap.get(uuid).getSetting("memory").split("\\/")[1]);
                         this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(uuid, this.pl.msgMap.get("max-memory-changed")));
                     }
                     else {
-                        this.pl.serverManager.setServerInfo(uuid, "memory", array[2] + "/" + this.pl.serverManager.serverMap.get(uuid).fromHashMap().get("memory").split("\\/")[1]);
+                        this.pl.serverManager.setServerInfo(uuid, "memory", array[2] + "/" + this.pl.serverManager.serverMap.get(uuid).getSetting("memory").split("\\/")[1]);
                         this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(uuid, this.pl.msgMap.get("max-memory-changed")));
                     }
                 }
@@ -582,7 +582,7 @@ public class PlayerServerAdmin extends Command
                     this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(uuid, this.pl.msgMap.get("invalid-memory-format")));
                 }
                 else {
-                    int memStringToInt = this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(uuid).fromHashMap().get("memory").split("\\/")[1]);
+                    int memStringToInt = this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(uuid).getSetting("memory").split("\\/")[1]);
                     if (array[2].matches("(\\+|-)[0-9]+([Mm]|[Gg])")) {
                         String replaceAll = array[2].replaceAll("[A-Za-z0-9]", "");
                         String s;
@@ -596,15 +596,15 @@ public class PlayerServerAdmin extends Command
                             }
                             s = String.valueOf(memStringToInt - this.pl.utils.memStringToInt(array[2].replaceAll("-", ""))) + "M";
                         }
-                        if (this.pl.utils.memStringToInt(s) > this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(uuid).fromHashMap().get("memory").split("\\/")[0])) {
+                        if (this.pl.utils.memStringToInt(s) > this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(uuid).getSetting("memory").split("\\/")[0])) {
                             this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(uuid, this.pl.msgMap.get("start-greater-max")));
                             return;
                         }
-                        this.pl.serverManager.setServerInfo(uuid, "memory", this.pl.serverManager.serverMap.get(uuid).fromHashMap().get("memory").split("\\/")[1] + "/" + s);
+                        this.pl.serverManager.setServerInfo(uuid, "memory", this.pl.serverManager.serverMap.get(uuid).getSetting("memory").split("\\/")[1] + "/" + s);
                         this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(uuid, this.pl.msgMap.get("start-memory-changed")));
                     }
                     else {
-                        this.pl.serverManager.setServerInfo(uuid, "memory", this.pl.serverManager.serverMap.get(uuid).fromHashMap().get("memory").split("\\/")[0] + "/" + array[2]);
+                        this.pl.serverManager.setServerInfo(uuid, "memory", this.pl.serverManager.serverMap.get(uuid).getSetting("memory").split("\\/")[0] + "/" + array[2]);
                         this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(uuid, this.pl.msgMap.get("start-memory-changed")));
                     }
                 }

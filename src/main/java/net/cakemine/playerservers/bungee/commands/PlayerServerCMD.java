@@ -238,7 +238,7 @@ public class PlayerServerCMD extends Command
             }
             else if (this.pl.serverManager.hasServer(uuid)) {
                 if (this.pl.utils.hasPerm(commandSender, "playerservers.ps.startother")) {
-                    String s2 = this.pl.serverManager.serverMap.get(uuid).fromHashMap().get("memory").split("\\/")[0];
+                    String s2 = this.pl.serverManager.serverMap.get(uuid).getSetting("memory").split("\\/")[0];
                     if (this.pl.useExpiry && this.pl.expiryTracker.msLeft(uuid) < 0L && !this.pl.utils.hasPerm(uuid, "playerservers.bypassexpire")) {
                         if (this.pl.useTitles) {
                             this.pl.utils.sendTitle(proxiedPlayer, this.pl.utils.doPlaceholders(uuid, this.pl.msgMap.get("server-expired-title")));
@@ -456,7 +456,7 @@ public class PlayerServerCMD extends Command
             }
         }
         else if (this.pl.serverManager.hasServer(string) && this.pl.serverManager.serverFilesExist(string)) {
-            String s = this.pl.serverManager.serverMap.get(string).fromHashMap().get("memory").split("\\/")[0];
+            String s = this.pl.serverManager.serverMap.get(string).getSetting("memory").split("\\/")[0];
             if (this.pl.useExpiry && this.pl.expiryTracker.msLeft(string) < 0L && !this.pl.utils.hasPerm(commandSender, "playerservers.bypassexpire")) {
                 if (this.pl.useTitles) {
                     this.pl.utils.sendTitle(proxiedPlayer, this.pl.utils.doPlaceholders(string, this.pl.msgMap.get("server-expired-title")));

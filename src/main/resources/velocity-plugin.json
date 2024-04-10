@@ -1,0 +1,10 @@
+{
+"id":"playerservers",
+"name":"PlayerServers",
+"version":"2.0.1-b1",
+"description":"give your players their own server",
+"url":"https://discord.gg/JmxAGSdcuR",
+"authors":["wildmaster84"],
+"dependencies":[],
+"main":"net.cakemine.playerservers.velocity.PlayerServers"
+}

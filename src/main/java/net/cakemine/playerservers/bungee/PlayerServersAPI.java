@@ -8,6 +8,8 @@ import net.md_5.bungee.api.plugin.*;
 import java.io.*;
 import java.util.*;
 
+import org.bukkit.plugin.java.JavaPlugin;
+
 /**
  * This class provides an API for interacting with the PlayerServers plugin.
  */
@@ -24,6 +26,10 @@ public class PlayerServersAPI {
     
     public void debugLog(String message) {
         this.pl.utils.debug(message);
+    }
+    
+    public void debugLog(Object plugin, String s) {
+        this.pl.utils.debug(s);
     }
     
     public String getPluginPrefix() {
@@ -47,7 +53,7 @@ public class PlayerServersAPI {
     }
     
     public String getServerMapSetting(String serverName, String setting) {
-        return this.pl.serverManager.serverMap.get(serverName).fromHashMap().get(setting);
+        return this.pl.serverManager.serverMap.get(serverName).getSetting(setting);
     }
     
     public void setServerMapSetting(String serverName, String setting, String value) {
@@ -55,7 +61,7 @@ public class PlayerServersAPI {
     }
     
     public void clearServerMapSetting(String serverName, String setting) {
-        this.pl.serverManager.serverMap.get(serverName).fromHashMap().remove(setting);
+        this.pl.serverManager.serverMap.get(serverName).getAllSettings().remove(setting);
         this.pl.proxy.getPluginManager().callEvent(new ServerModifyEvent(this.pl, setting));
     }
     
@@ -96,14 +102,14 @@ public class PlayerServersAPI {
         if (this.pl.serverManager.getOwnerId(serverName) == null) {
             return 0;
         }
-        return this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(this.pl.serverManager.getOwnerId(serverName)).fromHashMap().get("memory").split("\\/")[0]);
+        return this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(this.pl.serverManager.getOwnerId(serverName)).getSetting("memory").split("\\/")[0]);
     }
     
     public int getServerXms(String serverName) {
         if (this.pl.serverManager.getOwnerId(serverName) == null) {
             return 0;
         }
-        return this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(this.pl.serverManager.getOwnerId(serverName)).fromHashMap().get("memory").split("\\/")[1]);
+        return this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(this.pl.serverManager.getOwnerId(serverName)).getSetting("memory").split("\\/")[1]);
     }
     
     public String getPlayerServerName(UUID uuid) {

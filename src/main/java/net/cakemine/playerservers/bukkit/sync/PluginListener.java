@@ -156,7 +156,8 @@ public class PluginListener implements PluginMessageListener
                 case "controlGUI": {
                     HashMap<String, Object> jsonMap = mapper.readValue(Base64.getDecoder().decode(utf2), new TypeReference<HashMap<String, Object>>() {});
                     this.pl.utils.debug("input = " + jsonMap.toString());
-                    this.pl.gui.getGUI("control").open(this.pl.getServer().getPlayer(UUID.fromString((String) jsonMap.get("sender-uuid"))), null, 0, jsonMap);
+                    String uuid = dataInputStream.readUTF();
+                    this.pl.gui.getGUI("control").open(this.pl.getServer().getPlayer(UUID.fromString(uuid)), null, 0, jsonMap);
                     
                     break;
                 }
@@ -166,16 +167,10 @@ public class PluginListener implements PluginMessageListener
                 }
                 case "serverselect": {
                 	HashMap<String,  HashMap<String, String>> jsonMap = mapper.readValue(Base64.getDecoder().decode(utf2), new TypeReference<HashMap<String,  HashMap<String, String>>>() {});
-                	for (String owner : jsonMap.keySet()) {
-                		this.pl.utils.debug("input = " + jsonMap.get(owner).toString());
-                		this.pl.utils.debug("command sender = " + jsonMap.get(owner).get("sender-uuid"));
-                		if (jsonMap.get(owner).keySet().size() > 1) {
-                			this.pl.gui.getGUI("servers").open(this.pl.getServer().getPlayer(UUID.fromString(jsonMap.get(owner).get("sender-uuid"))), null, 0, jsonMap);
-                		} else {
-                    	this.pl.gui.getGUI("servers").open(this.pl.getServer().getPlayer(UUID.fromString(jsonMap.get(owner).get("sender-uuid"))), null, 0, new HashMap<String,  HashMap<String, String>>()); 
-                		}
-                        break;
-                    }
+            		String uuid = dataInputStream.readUTF();
+            		this.pl.utils.debug("input = " + jsonMap.toString());
+            		this.pl.utils.debug("command sender = " + uuid);
+            		this.pl.gui.getGUI("servers").open(this.pl.getServer().getPlayer(UUID.fromString(uuid)), null, 0, jsonMap);
                     break;
                 }
                 case "reSync": {

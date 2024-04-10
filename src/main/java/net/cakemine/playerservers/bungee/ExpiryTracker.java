@@ -222,9 +222,9 @@ public class ExpiryTracker
     }
     
     public String getDate(String s) {
-        if (!this.pl.serverManager.serverMap.containsKey(s) || !this.pl.serverManager.serverMap.get(s).fromHashMap().containsKey("expire-date") || this.pl.serverManager.serverMap.get(s).fromHashMap().get("expire-date").isEmpty()) {
+        if (!this.pl.serverManager.serverMap.containsKey(s) || !this.pl.serverManager.serverMap.get(s).getAllSettings().containsKey("expire-date") || this.pl.serverManager.serverMap.get(s).getSetting("expire-date").isEmpty()) {
             return "1989-04-20 16:20";
         }
-        return this.pl.serverManager.serverMap.get(s).fromHashMap().get("expire-date");
+        return this.pl.serverManager.serverMap.get(s).getSetting("expire-date");
     }
 }

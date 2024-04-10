@@ -1,6 +1,7 @@
 package net.cakemine.playerservers.velocity;
 
 import net.cakemine.playerservers.velocity.events.*;
+import net.cakemine.playerservers.velocity.objects.PlayerServer;
 import net.cakemine.playerservers.velocity.wrapper.Controller;
 import net.kyori.adventure.pointer.Pointered;
 
@@ -43,12 +44,12 @@ public class PlayerServersAPI {
         this.pl.sender.reSyncAll();
     }
     
-    public HashMap<String, HashMap<String, String>> getServerMap() {
+    public HashMap<String, PlayerServer> getServerMap() {
         return this.pl.serverManager.serverMap;
     }
     
     public String getServerMapSetting(String serverName, String setting) {
-        return ((HashMap) this.pl.serverManager.serverMap.get(serverName)).get(setting).toString();
+        return this.pl.serverManager.serverMap.get(serverName).getSetting(setting);
     }
     
     public void setServerMapSetting(String serverName, String setting, String value) {
@@ -56,7 +57,7 @@ public class PlayerServersAPI {
     }
     
     public void clearServerMapSetting(String serverName, String setting) {
-        this.pl.serverManager.serverMap.get(serverName).remove(setting);
+        this.pl.serverManager.serverMap.get(serverName).getAllSettings().remove(setting);
         this.pl.eventManager.fire(new ServerModifyEvent(this.pl, setting));
     }
     
@@ -97,14 +98,14 @@ public class PlayerServersAPI {
         if (this.pl.serverManager.getOwnerId(serverName) == null) {
             return 0;
         }
-        return this.pl.utils.memStringToInt(((HashMap) this.pl.serverManager.serverMap.get(this.pl.serverManager.getOwnerId(serverName))).get("memory").toString().split("\\/")[0]);
+        return this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(this.pl.serverManager.getOwnerId(serverName)).getSetting("memory").toString().split("\\/")[0]);
     }
     
     public int getServerXms(String serverName) {
         if (this.pl.serverManager.getOwnerId(serverName) == null) {
             return 0;
         }
-        return this.pl.utils.memStringToInt(((HashMap) this.pl.serverManager.serverMap.get(this.pl.serverManager.getOwnerId(serverName))).get("memory").toString().split("\\/")[1]);
+        return this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(this.pl.serverManager.getOwnerId(serverName)).getSetting("memory").toString().split("\\/")[1]);
     }
     
     public String getPlayerServerName(UUID uuid) {
@@ -346,5 +347,9 @@ public class PlayerServersAPI {
             intArray[i] = Integer.parseInt(version[i]);
         }
         return intArray;
+    }
+    
+    public PlayerServers getInstance() {
+    	return this.pl;
     }
 }

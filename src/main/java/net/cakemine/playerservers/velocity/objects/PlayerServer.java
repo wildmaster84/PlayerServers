@@ -1,11 +1,11 @@
-package net.cakemine.playerservers.bungee.objects;
+package net.cakemine.playerservers.velocity.objects;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.UUID;
 
-import net.cakemine.playerservers.bungee.PlayerServers;
+import net.cakemine.playerservers.velocity.PlayerServers;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class PlayerServer {
@@ -30,14 +30,14 @@ public class PlayerServer {
             file.mkdir();
         }
         if (this.pl.serverStore.get("servers") != null ) {
-        	if (this.pl.serverStore.getSection("servers").getSection(serverUUID).getSection("custom") != null) {
-        		this.pl.serverStore.getSection("servers").getSection(serverUUID).getSection("custom").getKeys().forEach(custom -> {
-        			customSettings.put(custom, this.pl.serverStore.getSection("servers").getSection(serverUUID).getSection("custom").getString(custom));
+        	if (this.pl.serverStore.get("servers").get(serverUUID).get("custom") != null) {
+        		this.pl.serverStore.get("servers").get(serverUUID).get("custom").keySet().forEach(custom -> {
+        			customSettings.put(custom, this.pl.serverStore.get("servers").get(serverUUID).get("custom").get(custom));
         		});
         	}
-        	if (this.pl.serverStore.getSection("servers").getSection(serverUUID).getSection("settings") != null) {
-        		this.pl.serverStore.getSection("servers").getSection(serverUUID).getSection("settings").getKeys().forEach(setting -> {
-        			settings.put(setting, this.pl.serverStore.getSection("servers").getSection(serverUUID).getSection("settings").getString(setting));
+        	if (this.pl.serverStore.get("servers").get(serverUUID).get("settings") != null) {
+        		this.pl.serverStore.get("servers").get(serverUUID).get("settings").keySet().forEach(setting -> {
+        			settings.put(setting, this.pl.serverStore.get("servers").get(serverUUID).get("settings").get(setting));
         		});
         	}
         	map.put("settings", settings);

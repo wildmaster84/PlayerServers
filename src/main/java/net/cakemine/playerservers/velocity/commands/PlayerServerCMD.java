@@ -15,13 +15,13 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import java.util.*;
 import java.io.*;
 
-public class PlayerServer implements SimpleCommand {
+public class PlayerServerCMD implements SimpleCommand {
     PlayerServers pl;
     ProxyServer proxy;
     PluginSender pSend;
     public static ArrayList<String> chill;
     
-    public PlayerServer(PlayerServers pl, String s) {
+    public PlayerServerCMD(PlayerServers pl, String s) {
         //super(s, null, new String[] { "pserver", "psrv", "ps" });
         this.proxy = pl.proxy;
         this.pl = pl;
@@ -29,10 +29,10 @@ public class PlayerServer implements SimpleCommand {
     }
     
     public void startCooldown(String s) {
-        PlayerServer.chill.add(s);
+    	PlayerServerCMD.chill.add(s);
         this.proxy.getScheduler()
         .buildTask(this.pl, () -> {
-        	PlayerServer.chill.remove(s);
+        	PlayerServerCMD.chill.remove(s);
         })
         .delay(30L, TimeUnit.SECONDS)
         .schedule();
@@ -247,7 +247,7 @@ public class PlayerServer implements SimpleCommand {
             }
             else if (this.pl.serverManager.hasServer(uuid)) {
                 if (this.pl.utils.hasPerm(commandSender, "playerservers.ps.startother")) {
-                    String s2 = ((HashMap) this.pl.serverManager.serverMap.get(uuid)).get("memory").toString().split("\\/")[0];
+                    String s2 = this.pl.serverManager.serverMap.get(uuid).getSetting("memory").toString().split("\\/")[0];
                     if (this.pl.useExpiry && this.pl.expiryTracker.msLeft(uuid) < 0L && !this.pl.utils.hasPerm(uuid, "playerservers.bypassexpire")) {
                         if (this.pl.useTitles) {
                             this.pl.utils.sendTitle(proxiedPlayer, this.pl.utils.doPlaceholders(uuid, this.pl.msgMap.get("server-expired-title")));
@@ -393,7 +393,7 @@ public class PlayerServer implements SimpleCommand {
         this.pl.serverManager.createServer(proxiedPlayer, templateFile);
         this.proxy.getScheduler()
         .buildTask(this.pl, () -> {
-        	PlayerServer.this.startCommand(commandSender, new String[0]);
+        	PlayerServerCMD.this.startCommand(commandSender, new String[0]);
         })
         .delay(5L, TimeUnit.SECONDS)
         .schedule();
@@ -456,7 +456,7 @@ public class PlayerServer implements SimpleCommand {
     public void startCommand(CommandSource commandSender, String[] array) {
         Player proxiedPlayer = (Player)commandSender;
         String string = proxiedPlayer.getUniqueId().toString();
-        if (PlayerServer.chill != null && PlayerServer.chill.contains(string)) {
+        if (PlayerServerCMD.chill != null && PlayerServerCMD.chill.contains(string)) {
             if (this.pl.useTitles) {
                 this.pl.utils.sendTitle(proxiedPlayer, this.pl.utils.doPlaceholders(string, this.pl.msgMap.get("recently-started-title")));
             }
@@ -465,7 +465,7 @@ public class PlayerServer implements SimpleCommand {
             }
         }
         else if (this.pl.serverManager.hasServer(string) && this.pl.serverManager.serverFilesExist(string)) {
-            String s = ((HashMap) this.pl.serverManager.serverMap.get(string)).get("memory").toString().split("\\/")[0];
+            String s = this.pl.serverManager.serverMap.get(string).getSetting("memory").toString().split("\\/")[0];
             if (this.pl.useExpiry && this.pl.expiryTracker.msLeft(string) < 0L && !this.pl.utils.hasPerm(commandSender, "playerservers.bypassexpire")) {
                 if (this.pl.useTitles) {
                     this.pl.utils.sendTitle(proxiedPlayer, this.pl.utils.doPlaceholders(string, this.pl.msgMap.get("server-expired-title")));
@@ -524,7 +524,7 @@ public class PlayerServer implements SimpleCommand {
     public void stopCommand(CommandSource commandSender, String[] array) {
         Player proxiedPlayer = (Player)commandSender;
         String string = proxiedPlayer.getUniqueId().toString();
-        if (PlayerServer.chill != null && PlayerServer.chill.contains(string)) {
+        if (PlayerServerCMD.chill != null && PlayerServerCMD.chill.contains(string)) {
             if (this.pl.useTitles) {
                 this.pl.utils.sendTitle(proxiedPlayer, this.pl.utils.doPlaceholders(string, this.pl.msgMap.get("recently-started-title")));
             }
@@ -684,7 +684,7 @@ public class PlayerServer implements SimpleCommand {
     }
     
     static {
-        PlayerServer.chill = new ArrayList<String>();
+    	PlayerServerCMD.chill = new ArrayList<String>();
     }
 
 	public void execute(CommandSource commandSender, String[] array) {

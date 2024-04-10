@@ -45,11 +45,11 @@ public class ServerManager
     	for (Map.Entry<String, PlayerServer> entry : this.serverMap.entrySet()) {
     		server.clear();
     		settings.clear();    		
-    		server.put(entry.getKey(), server);
-    		settings.put("custom", this.serverMap.get(entry.getKey()).getAllCustomSettings());
     		
-    		server.put(entry.getKey(), this.serverMap.get(entry.getKey()).fromHashMap());
+    		settings.put("custom", this.serverMap.get(entry.getKey()).getAllCustomSettings());
+    		settings.put("settings", this.serverMap.get(entry.getKey()).getAllSettings());
     		server.put(entry.getKey(), settings);
+    		
         }
     	this.pl.serverStore.set("servers", server);
         File file = new File(this.pl.getDataFolder(), "servers.yml");
@@ -100,9 +100,9 @@ public class ServerManager
 	            }
 	            this.pl.utils.debug("startupSrv called for " + s);
 	            this.verifySettings(s);
-	            if (this.pl.serverManager.serverMap.get(s).fromHashMap().get("memory") != null && !this.pl.serverManager.serverMap.get(s).fromHashMap().get("memory").isEmpty()) {
-	                s2 = this.pl.serverManager.serverMap.get(s).fromHashMap().get("memory").split("\\/")[0];
-	                s3 = this.pl.serverManager.serverMap.get(s).fromHashMap().get("memory").split("\\/")[1];
+	            if (this.pl.serverManager.serverMap.get(s).getSetting("memory") != null && !this.pl.serverManager.serverMap.get(s).getSetting("memory").isEmpty()) {
+	                s2 = this.pl.serverManager.serverMap.get(s).getSetting("memory").split("\\/")[0];
+	                s3 = this.pl.serverManager.serverMap.get(s).getSetting("memory").split("\\/")[1];
 	                if (!s2.matches("[0-9]+[MmGg][Bb]?")) {
 	                    s2 += "M";
 	                }
@@ -423,7 +423,7 @@ public class ServerManager
             this.setServerInfo(s2, "white-list", this.pl.settingsManager.getSetting(s2, "white-list"));
             this.pl.utils.iteratePort();
             this.setServerInfo(s2, "memory", this.pl.templateManager.getTemplateSetting(templateFile, "default-Xmx") + "/" + this.pl.templateManager.getTemplateSetting(templateFile, "default-Xmx"));
-            if (this.pl.resetExpiry || (this.serverMap.containsKey(s2) && (this.serverMap.get(s2).fromHashMap().get("expire-date") == null || this.serverMap.get(s2).fromHashMap().get("expire-date").isEmpty()))) {
+            if (this.pl.resetExpiry || (this.serverMap.containsKey(s2) && (this.serverMap.get(s2).getSetting("expire-date") == null || this.serverMap.get(s2).getSetting("expire-date").isEmpty()))) {
                 this.setServerInfo(s2, "expire-date", "1989-04-20 16:20");
                 this.pl.expiryTracker.addTime(s2, this.pl.templateManager.expireTime(templateFile), this.pl.templateManager.expireUnit(templateFile));
             }
@@ -641,7 +641,7 @@ public class ServerManager
     
     public String getServerInfo(String s, String s2) {
         if (this.serverMap.containsKey(s)) {
-            return this.serverMap.get(s).fromHashMap().get(s2);
+            return this.serverMap.get(s).getSetting(s2);
         }
         return null;
     }
@@ -650,11 +650,11 @@ public class ServerManager
         String s4 = null;
         if (!this.serverMap.containsKey(s)) {
         	this.serverMap.put(s, new PlayerServer(s));
-            this.serverMap.get(s).fromHashMap().put(s2, s3);
+            this.serverMap.get(s).setSetting(s2, s3);
         }
         else {
-            s4 = this.serverMap.get(s).fromHashMap().get(s2);
-            this.serverMap.get(s).fromHashMap().put(s2, s3);
+            this.serverMap.get(s).setSetting(s2, s3);
+            s4 = this.serverMap.get(s).getSetting(s2);
         }
         this.saveServerMap();
         if (s4 == null || !s4.equals(s3)) {
@@ -686,7 +686,7 @@ public class ServerManager
     
     public boolean isPlayerServer(String s) {
         for (Map.Entry<String, PlayerServer> entry : this.pl.serverManager.serverMap.entrySet()) {
-            if (entry.getValue().fromHashMap().get("server-name") != null && entry.getValue().fromHashMap().get("server-name").equals(s)) {
+            if (entry.getValue().getSetting("server-name") != null && entry.getValue().getSetting("server-name").equals(s)) {
                 return true;
             }
         }
@@ -695,7 +695,7 @@ public class ServerManager
     
     public String getOwnerId(String s) {
     	for (Map.Entry<String, PlayerServer> entry : this.serverMap.entrySet()) {
-    		HashMap<String, String> hashMap = entry.getValue().fromHashMap();
+    		HashMap<String, String> hashMap = entry.getValue().getAllSettings();
     		if (hashMap != null && hashMap.get("server-name") != null && hashMap.get("server-name").equals(s)) {
                 return entry.getKey();
             }
@@ -817,7 +817,7 @@ public class ServerManager
                 String s = entry.getKey();
                 ProxiedPlayer player = this.pl.proxy.getPlayer(UUID.fromString(s));
                 String s2 = entry.getValue();
-                String s3 = this.pl.serverManager.serverMap.get(s2).fromHashMap().get("memory").split("\\/")[0];
+                String s3 = this.pl.serverManager.serverMap.get(s2).getSetting("memory").split("\\/")[0];
                 if (this.pl.globalMaxRam > 0 && this.pl.serverManager.allocatedRam + this.pl.utils.memStringToInt(s3) > this.pl.globalMaxRam) {
                     return;
                 }

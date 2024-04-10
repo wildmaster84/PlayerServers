@@ -13,6 +13,7 @@ import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ServerConnection;
 
+import net.cakemine.playerservers.velocity.objects.PlayerServer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -217,15 +218,15 @@ public class Utils
             this.pl.utils.log(Level.WARNING, "Tried to get server IP for " + s + "'s server, but server did not exist in the server map (servers.yml)!");
             return "127.0.0.1";
         }
-        if (((Map<String, String>) this.pl.serverManager.serverMap.get(s)).containsKey("server-ip")) {
-            return this.pl.serverManager.serverMap.get(s).get("server-ip").toString();
+        if (this.pl.serverManager.serverMap.get(s).getAllSettings().containsKey("server-ip")) {
+            return this.pl.serverManager.serverMap.get(s).getSetting("server-ip").toString();
         }
         this.pl.serverManager.verifySettings(s);
         String setting;
         if (s == null || s.equalsIgnoreCase("null") || (setting = this.pl.settingsManager.getSetting(s, "server-ip")) == null) {
             return "127.0.0.1";
         }
-        if (this.pl.serverManager.hasServer(s) && (this.pl.serverManager.getServerInfo(s, "server-ip") == null || this.pl.serverManager.getServerInfo(s, "server-ip").equalsIgnoreCase("null") || !((HashMap) this.pl.serverManager.serverMap.get(s)).get("server-ip").toString().equalsIgnoreCase(setting))) {
+        if (this.pl.serverManager.hasServer(s) && (this.pl.serverManager.getServerInfo(s, "server-ip") == null || this.pl.serverManager.getServerInfo(s, "server-ip").equalsIgnoreCase("null") || !(this.pl.serverManager.serverMap.get(s).getSetting("server-ip").equalsIgnoreCase(setting)))) {
             this.pl.serverManager.setServerInfo(s, "server-ip", setting);
         }
         return setting;
@@ -293,8 +294,8 @@ public class Utils
     }
     
     public String getServerUUID(String s) {
-        for (Entry<String, HashMap<String, String>> entry : this.pl.serverManager.serverMap.entrySet()) {
-            if (s.equals(entry.getValue().get("server-name"))) {
+        for (Entry<String, PlayerServer> entry : this.pl.serverManager.serverMap.entrySet()) {
+            if (s.equals(entry.getValue().getSetting("server-name"))) {
                 return entry.getKey().toString();
             }
         }
