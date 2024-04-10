@@ -1,0 +1,15 @@
+template-name: 'Default Template'
+icon-material: GRASS
+description: 'Default template description.||Edit this in the PlayerServers.yml||file for each template.'
+creator-gets-op: true
+default-expiry-time: '1 day'
+default-Xmx: 2048M
+default-Xms: 1024M
+auto-shutdown: true
+auto-shutdown-timer: 1800
+shutdown-on-expire: false
+owner-join-message: "&eWelcome the owner of the server!||&6&o%player%&e has joined!"
+owner-join-commands:
+- '#enter custom commands to run on join here.'
+- '#commands starting with # won''t be ran.'
+- '#placeholders: %owner-name%, %owner-uuid%, %template-name%, %server-name%, %server-port%'

@@ -1,0 +1,279 @@
+go-back-item: red_stained_glass_pane:14
+fill-item: white_stained_glass_pane:0
+
+settings-title: "&5&lSettings &0&l»"
+settings-icons:
+    expire-tracker:
+        item-id: clock
+        item-name: "&e&o&lTime Until Server Expires:"
+        item-lore: "Time Left: %time-left%||Expire Date: %expire-date%"
+    gamemode:
+        item-id: beacon
+        item-name: "&b&oChange server default gamemode."
+        item-lore: "Click to open the server||default game mode settings menu."
+    difficulty:
+        item-id: iron_chestplate
+        item-name: "&b&oChange server difficulty."
+        item-lore: "Click to open the server||difficulty settings menu."
+    pvp-off:
+        item-id: wooden_sword
+        item-name: "&a&lPvP is OFF"
+        item-lore: "Click to toggle pvp &e&oon."
+    pvp-on:
+        item-id: diamond_sword
+        item-name: "&c&lPvP is ON"
+        item-lore: "Click to toggle pvp &e&ooff."
+    whitelist:
+        item-id: paper
+        item-name: "&bWhitelist Settings"
+        item-lore: "Click to open the whitelist||settings menu."
+    player-manager:
+        item-id: legacy_skull_item:3
+        item-name: "&bPlayer Manager"
+        item-lore: "Click to manage online players."
+    world-settings:
+        item-id: legacy_grass
+        item-name: "&bChange world settings."
+        item-lore: "Click to open the server||world settings menu."
+
+gamemode-title: "&5&lServer Gamemode &0&l»"
+gamemode-icons:
+    force-gamemode-on:
+        item-id: bedrock
+        item-name: "&e&oForce Gamemode: &a&lON"
+        item-lore: "Forcing players into||the default gamemode.||&e&oClick to toggle off."
+    force-gamemode-off:
+        item-id: sponge
+        item-name: "&e&oForce Gamemode: &c&lOFF"
+        item-lore: "Players will join in the same||gamemode they had on logout.||&e&oClick to toggle on."
+    survival:
+        item-id: diamond_ore
+        item-name: "&e&oSet to Survival"
+        item-lore: "Click this to set the default||gamemode to survival."
+    creative:
+        item-id: redstone_block
+        item-name: "&e&oSet to Creative"
+        item-lore: "Click this to set the default||gamemode to creative."
+    adventure:
+        item-id: tripwire_hook
+        item-name: "&e&oSet to Adventure"
+        item-lore: "Click this to set the default||gamemode to adventure."
+    spectator:
+        item-id: glass
+        item-name: "&e&oSet to Spectator"
+        item-lore: "Click this to set the default||gamemode to spectator."
+
+difficulty-title: "&5&lDifficulty &0&l»"
+difficulty-icons:
+    peaceful:
+        item-id: wooden_hoe
+        item-name: "&e&oSet to &lPeaceful"
+        item-lore: "Click this to set the||difficulty to peaceful."
+    easy:
+        item-id: wooden_sword
+        item-name: "&e&oSet to &lEasy"
+        item-lore: "Click this to set the||difficulty to easy."
+    normal:
+        item-id: iron_sword
+        item-name: "&e&oSet to &lNormal"
+        item-lore: "Click this to set the||difficulty to normal."
+    hard:
+        item-id: diamond_sword
+        item-name: "&e&oSet to &lHard"
+        item-lore: "Click this to set the||difficulty to hard."
+
+whitelist-title: "&5&oWhitelisting &0&l»"
+whitelist-icons:
+    whitelist-off:
+        item-id: clay
+        item-name: "&c&lWhitelist is OFF"
+        item-lore: "Click to toggle the||whitelist ON!"
+    whitelist-on:
+        item-id: slime_ball
+        item-name: "&a&lWhitelist is ON"
+        item-lore: "Click to toggle the||whitelist OFF!"
+    current-whitelist:
+        item-id: paper
+        item-name: "&e&oCurrent Whitelist:"
+    add-player:
+        item-id: legacy_skull_item:3
+        item-name: "&a&lAdd a player"
+        item-lore: "Click to be prompted for a||player name to add||to the whitelist."
+    remove-player:
+        item-id: legacy_skull_item:1
+        item-name: "&c&lRemove a player"
+        item-lore: "Click to be prompted for a||player name to remove||from the whitelist."
+    clear-whitelist:
+        item-id: flint_and_steel
+        item-name: "&c&lClear Whitelist"
+        item-lore: "Click to clear the whitelist!||&c&oYou'll have to confirm!"
+    clear-confirm:
+        item-id: tnt
+        item-name: "&c&lCONFIRM Clear Whitelist"
+        item-lore: "&c&lWarning: Clicking this will||&c&lclear the whitelist!"
+
+player-manager-title: "&5&lPlayers Manager &0&l»"
+player-manager-icons:
+    nobody-online:
+        item-id: legacy_skull_item:1
+        item-name: "&c&oNobody but you online!"
+        item-lore: "There are no players online to manage."
+    player:
+        item-id: legacy_skull_item
+        item-name: "&7&o« &e&o%player% &7&o»"
+        item-lore: "Click to open the options for %player%"
+    page-back:
+        item-id: arrow
+        item-name: "&e&l&o» Back"
+    page-forward:
+        item-id: arrow
+        item-name: "&e&l&oForward »"
+
+player-title: "&5&lPlayer &o&l»"
+player-icons:
+    player:
+        item-id: legacy_skull_item
+        item-name: "&7&o« &e&o%player% &7&o»"
+        item-lore: "Click to open the options for %player%"
+    kick:
+        item-id: diamond_boots
+        item-name: "&b&oKick %player%"
+        item-lore: "Click to kick this||player from your server."
+    ban:
+        item-id: bedrock
+        item-name: "&b&oBan %player%"
+        item-lore: "Click to ban the player from your server."
+    ban-confirm:
+        item-id: tnt
+        item-name: "&c&o&lConfirm Ban %player%"
+        item-lore: "&c&lWarning: Clicking this will||&c&lban this player!"
+    player-is-whitelisted:
+        item-id: map
+        item-name: "&a&o%player% is whitelisted."
+        item-lore: "Click to remove the player from the whitelist."
+    player-not-whitelisted:
+        item-id: paper
+        item-name: "&c&o%player% is not whitelisted."
+        item-lore: "Click to add the player to the whitelist."
+
+world-settings-title: "&5&lWorld Settings &0&l»"
+world-settings-icons:
+    allow-nether-on:
+        item-id: quartz_block
+        item-name: "&e&oAllow Nether: &a&lTrue"
+        item-lore: "Travel to nether allowed.||&e&oClick to toggle off."
+    allow-nether-off:
+        item-id: nether_brick
+        item-name: "&e&oAllow Nether: &a&lFalse"
+        item-lore: "Travel to nether denied.||&e&oClick to toggle on."
+    allow-flight-on:
+        item-id: feather
+        item-name: "&e&oAllow Flight: &a&lTrue"
+        item-lore: "Will not kick people for flying.||Note: Doesn't change plugins||like NoCheatPlus.||&e&oClick to toggle off."
+    allow-flight-off:
+        item-id: bricks
+        item-name: "&e&oAllow Flight: &a&lFalse"
+        item-lore: "Kicks people for flying.||Note: Doesn't change plugins||like NoCheatPlus.||&e&oClick to toggle on."
+    generate-structures-on:
+        item-id: stone_bricks
+        item-name: "&e&oGenerate Structures: &a&lTrue"
+        item-lore: "Server will generate structures||(such as strongholds) around the world.||&6&oNote: Toggling this won't remove||&6&oexisting structures.||&e&oClick to toggle off."
+    generate-structures-off:
+        item-id: stone
+        item-name: "&e&oGenerate Structures: &c&lFalse"
+        item-lore: "Server will not generate structures||(such as strongholds) around the world.||&6&oNote: Toggling this won't add them to existing chunks||&e&oClick to toggle on."
+    mob-settings:
+        item-id: legacy_skull_item:4
+        item-name: "&bMob/NPC Settings"
+        item-lore: "Click to open mob settings."
+
+mob-settings-title: "&5&lMob Settings &0&l»"
+mob-settings-icons:
+    monster-spawns-on:
+        item-id: legacy_skull_item:2
+        item-name: "&e&oMonster Spawning: &a&lON"
+        item-lore: "Click to toggle OFF.||&c&lWarning: &e&oThis will take effect||&e&oon next server restart!"
+    monster-spawns-off:
+        item-id: ink_sac:1
+        item-name: "&e&oMonster Spawning: &c&lOFF"
+        item-lore: "Click to toggle ON.||&c&lWarning: &e&oThis will take effect||&e&oon next server restart!"
+    animal-spawns-on:
+        item-id: porkchop
+        item-name: "&e&oAnimal Spawning: &a&lON"
+        item-lore: "Click to toggle OFF.||&c&lWarning: &e&oThis will take effect||&e&oon next server restart!"
+    animal-spawns-off:
+        item-id: cooked_porkchop
+        item-name: "&e&oAnimal Spawning: &c&lOFF"
+        item-lore: "Click to toggle ON.||&c&lWarning: &e&oThis will take effect||&e&oon next server restart!"
+    npc-spawns-on:
+        item-id: emerald
+        item-name: "&e&oVillager/NPC Spawning: &a&lON"
+        item-lore: "Click to toggle OFF.||&c&lWarning: &e&oThis will take effect||&e&oon next server restart!"
+    npc-spawns-off:
+        item-id: rotten_flesh
+        item-name: "&e&oVillager/NPC Spawning: &c&lOFF"
+        item-lore: "Click to toggle ON.||&c&lWarning: &e&oThis will take effect||&e&oon next server restart!"
+
+servers-title: "&5&lPlayerServers &0&l»"
+servers-icons:
+    none-online:
+        item-id: legacy_skull_item:1
+        item-name: "&c&oNo servers online."
+        item-lore: "Start up your own!"
+    server:
+        item-id: legacy_skull_item
+        item-lore: "Owner: %player%||Players: %current-players%/%max-players%||UUID: %player-uuid%||MOTD: %motd%||Template: %template-name%||Expire Date: %expire-date%||Time Left: %time-left%||Whitelist: %whitelist%"
+    page-back:
+        item-id: arrow
+        item-name: "&e&l&o» Back"
+    page-forward:
+        item-id: arrow
+        item-name: "&e&l&oForward »"
+
+templates-title: "&5&lWorlds & Templates &0&l»"
+templates-icons:
+    none-found:
+        item-id: legacy_skull_item:1
+        item-name: "&c&oNo worlds found!"
+        item-lore: "Something went horribly wrong,||no world templates found!"
+    page-back:
+        item-id: arrow
+        item-name: "&e&l&o» Back"
+    page-forward:
+        item-id: arrow
+        item-name: "&e&l&oForward »"
+
+control-title: "&5&lPS Control &0&l»"
+control-icons:
+    expire-tracker:
+        item-id: clock
+        item-name: "&e&o&lTime Until Server Expires:"
+        item-lore: "Time Left: %time-left%||Expire Date: %expire-date%"
+    create-server:
+        item-id: emerald_block
+        item-name: "&a&o&lCreate a Server"
+        item-lore: "You do not have a server,||click here to create one!"
+    delete-server:
+        item-id: redstone_block
+        item-name: "&c&o&lDelete your server"
+        item-lore: "You have a server,||click here to delete it!||You will have to confirm!"
+    delete-confirm:
+        item-id: tnt
+        item-name: "&c&lCONFIRM Server Delete!"
+        item-lore: "&c&lWarning: Clicking this will||&c&lpermanently delete your server!"
+    join-server:
+        item-id: compass
+        item-name: "&a&lJoin Your Server"
+        item-lore: "Click to join your server!"
+    leave-server:
+        item-id: compass
+        item-name: "&c&lLeave Your Server"
+        item-lore: "Click to leave your server!"
+    start-server:
+        item-id: diamond
+        item-name: "&b&lStart Your Server"
+        item-lore: "Click to start your server!"
+    stop-server:
+        item-id: coal
+        item-name: "&c&lStop Your Server"
+        item-lore: "Click to stop your server!"

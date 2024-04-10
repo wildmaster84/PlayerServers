@@ -1,0 +1,24 @@
+name: PlayerServers
+version: 2.0.0-b5
+main: "net.cakemine.playerservers.bukkit.PlayerServers"
+authors: ["wildmaster84"]
+author: "wildmaster84"
+api-version: 1.13
+folia-supported: true
+commands:
+  myserver:
+    description: Control your server.
+    aliases: [mys,mysrv]
+    usage: Type /myservers help
+  playerserveradmin:
+    description: Administrate the PlayerServers.
+    aliases: [psa,psrvadmin]
+    usage: Type /psa help for help.
+  playerserver:
+    description: Control your server.
+    aliases: [ps,psrv]
+    usage: Type /ps help for help.
+  pssync:
+    description: ReSync settings/templates for PlayerServers.
+    aliases: [psync]
+    usage: Type /pssync to resync settings.
