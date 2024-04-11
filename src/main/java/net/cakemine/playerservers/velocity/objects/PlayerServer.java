@@ -2,34 +2,33 @@ package net.cakemine.playerservers.velocity.objects;
 
 import java.io.File;
 import java.util.HashMap;
-import java.util.Map.Entry;
 import java.util.UUID;
 
 import net.cakemine.playerservers.velocity.PlayerServers;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
 
 public class PlayerServer {
 	PlayerServers pl = PlayerServers.getApi().getInstance();
 	HashMap<String, String> customSettings;
 	HashMap<String, String> settings;
 	HashMap<String, HashMap<String, String>> map;
-	String uuid;
-	public PlayerServer(String serverUUID) {
+	final UUID uuid;
+	public PlayerServer(UUID serverUUID) {
 		customSettings = new HashMap<>();
 		settings = new HashMap<>();
 		map = new HashMap<>();
 		uuid = serverUUID;
-		loadServer(serverUUID);
+		loadServer();
 		
 	}
 	
-	private void loadServer(String serverUUID) {
+	private void loadServer() {
+		String serverUUID = uuid.toString();
         File file = new File(this.pl.getDataFolder() + File.separator + "servers");
         this.pl.utils.debug("serverDir = " + file.toString());
         if (!file.exists()) {
             file.mkdir();
         }
-        if (this.pl.serverStore.get("servers") != null ) {
+        if (this.pl.serverStore.get("servers") != null && this.pl.serverStore.get("servers").get(serverUUID) != null) {
         	if (this.pl.serverStore.get("servers").get(serverUUID).get("custom") != null) {
         		this.pl.serverStore.get("servers").get(serverUUID).get("custom").keySet().forEach(custom -> {
         			customSettings.put(custom, this.pl.serverStore.get("servers").get(serverUUID).get("custom").get(custom));
@@ -92,7 +91,7 @@ public class PlayerServer {
 	}
 	
 	public String getUUID() {
-		return uuid;
+		return uuid.toString();
 	}
 	
 	public String getMotd() {

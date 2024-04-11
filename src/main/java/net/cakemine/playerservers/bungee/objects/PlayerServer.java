@@ -13,23 +13,24 @@ public class PlayerServer {
 	HashMap<String, String> customSettings;
 	HashMap<String, String> settings;
 	HashMap<String, HashMap<String, String>> map;
-	String uuid;
-	public PlayerServer(String serverUUID) {
+	UUID uuid;
+	public PlayerServer(UUID serverUUID) {
 		customSettings = new HashMap<>();
 		settings = new HashMap<>();
 		map = new HashMap<>();
 		uuid = serverUUID;
-		loadServer(serverUUID);
+		loadServer();
 		
 	}
 	
-	private void loadServer(String serverUUID) {
+	private void loadServer() {
+		String serverUUID = uuid.toString();
         File file = new File(this.pl.getDataFolder() + File.separator + "servers");
         this.pl.utils.debug("serverDir = " + file.toString());
         if (!file.exists()) {
             file.mkdir();
         }
-        if (this.pl.serverStore.get("servers") != null ) {
+        if (this.pl.serverStore.get("servers") != null && this.pl.serverStore.getSection("servers").getSection(serverUUID) != null) {
         	if (this.pl.serverStore.getSection("servers").getSection(serverUUID).getSection("custom") != null) {
         		this.pl.serverStore.getSection("servers").getSection(serverUUID).getSection("custom").getKeys().forEach(custom -> {
         			customSettings.put(custom, this.pl.serverStore.getSection("servers").getSection(serverUUID).getSection("custom").getString(custom));
@@ -92,7 +93,7 @@ public class PlayerServer {
 	}
 	
 	public String getUUID() {
-		return uuid;
+		return uuid.toString();
 	}
 	
 	public String getMotd() {

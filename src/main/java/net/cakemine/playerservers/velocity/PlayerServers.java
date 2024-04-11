@@ -3,7 +3,6 @@ package net.cakemine.playerservers.velocity;
 import net.cakemine.playerservers.velocity.objects.PlayerServer;
 import net.cakemine.playerservers.velocity.commands.*;
 import net.cakemine.playerservers.velocity.wrapper.*;
-import net.kyori.adventure.pointer.Pointered;
 import net.cakemine.playerservers.velocity.sync.*;
 
 import java.io.*;
@@ -873,7 +872,7 @@ public class PlayerServers {
         this.serverManager.serverMap.clear();
         if (this.serverStore.get("servers") != null ) {
         	((HashMap<String,HashMap<String,HashMap<String,String>>>)this.serverStore.get("servers")).keySet().forEach(server -> {
-            	this.serverManager.serverMap.put(server, new PlayerServer(server));
+            	this.serverManager.serverMap.put(server, new PlayerServer(UUID.fromString(server)));
             });
         }
         this.utils.log(this.serverManager.serverMap.size() + " player servers saved.");

@@ -649,7 +649,7 @@ public class ServerManager
     public void setServerInfo(String s, String s2, String s3) {
         String s4 = null;
         if (!this.serverMap.containsKey(s)) {
-        	this.serverMap.put(s, new PlayerServer(s));
+        	this.serverMap.put(s, new PlayerServer(UUID.fromString(s)));
             this.serverMap.get(s).setSetting(s2, s3);
         }
         else {

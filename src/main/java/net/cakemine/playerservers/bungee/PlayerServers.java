@@ -843,7 +843,7 @@ public class PlayerServers extends Plugin {
         this.serverManager.serverMap.clear();
         if (this.serverStore.get("servers") != null ) {
         	this.serverStore.getSection("servers").getKeys().forEach(server -> {
-            	this.serverManager.serverMap.put(server, new PlayerServer(server));
+            	this.serverManager.serverMap.put(server, new PlayerServer(UUID.fromString(server)));
             });
         }
         this.utils.log(this.serverManager.serverMap.size() + " player servers saved.");

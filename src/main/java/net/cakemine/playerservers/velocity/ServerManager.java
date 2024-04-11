@@ -625,15 +625,15 @@ public class ServerManager
         return null;
     }
     
-    public void setServerInfo(String serverName, String setting, String value) {
+    public void setServerInfo(String serverUUID, String setting, String value) {
         String s4 = null;
-        if (!this.serverMap.containsKey(serverName)) {
-        	this.serverMap.put(serverName, new PlayerServer(serverName));
-            this.serverMap.get(serverName).setSetting(setting, value);
+        if (!this.serverMap.containsKey(serverUUID)) {
+        	this.serverMap.put(serverUUID, new PlayerServer(UUID.fromString(serverUUID)));
+            this.serverMap.get(serverUUID).setSetting(setting, value);
         }
         else {
-            this.serverMap.get(serverName).setSetting(setting, value);
-            s4 = this.serverMap.get(serverName).getSetting(setting);
+            this.serverMap.get(serverUUID).setSetting(setting, value);
+            s4 = this.serverMap.get(serverUUID).getSetting(setting);
         }
         this.saveServerMap();
         if (s4 == null || !s4.equals(value)) {
@@ -645,9 +645,9 @@ public class ServerManager
             list.add("white-list");
             if (list.contains(setting.toLowerCase())) {
                 this.pl.utils.debug("Updating server.properties " + setting + " setting to: " + value);
-                this.pl.settingsManager.changeSetting(serverName, setting, value);
+                this.pl.settingsManager.changeSetting(serverUUID, setting, value);
             }
-            ServerModifyEvent serverModifyEvent = new ServerModifyEvent(this.pl, serverName);
+            ServerModifyEvent serverModifyEvent = new ServerModifyEvent(this.pl, serverUUID);
             this.pl.eventManager.fire(serverModifyEvent);
         }
     }
