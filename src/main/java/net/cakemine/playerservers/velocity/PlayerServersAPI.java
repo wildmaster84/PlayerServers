@@ -3,7 +3,6 @@ package net.cakemine.playerservers.velocity;
 import net.cakemine.playerservers.velocity.events.*;
 import net.cakemine.playerservers.velocity.objects.PlayerServer;
 import net.cakemine.playerservers.velocity.wrapper.Controller;
-import net.kyori.adventure.pointer.Pointered;
 
 import java.io.*;
 import java.util.*;

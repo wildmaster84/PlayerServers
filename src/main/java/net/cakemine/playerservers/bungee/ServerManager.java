@@ -668,7 +668,7 @@ public class ServerManager
                 this.pl.utils.debug("Updating server.properties " + s2 + " setting to: " + s3);
                 this.pl.settingsManager.changeSetting(s, s2, s3);
             }
-            this.pl.proxy.getPluginManager().callEvent((Event)new ServerModifyEvent(this.pl, s));
+            this.pl.proxy.getPluginManager().callEvent(new ServerModifyEvent(this.pl, s));
         }
     }
     

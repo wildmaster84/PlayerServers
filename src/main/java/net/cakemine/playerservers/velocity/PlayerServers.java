@@ -136,6 +136,7 @@ public class PlayerServers {
     public void onProxyInitialize(ProxyInitializeEvent event) {
 		DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+        options.setAllowUnicode(true);
 		this.yaml = new Yaml(options);
         this.vers = container.getDescription().getVersion().get();
         this.usingWindows = this.usingWindows();

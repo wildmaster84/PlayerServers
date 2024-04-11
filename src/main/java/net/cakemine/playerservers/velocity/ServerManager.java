@@ -620,7 +620,7 @@ public class ServerManager
     
     public String getServerInfo(String s, String s2) {
         if (this.serverMap.containsKey(s)) {
-            return this.serverMap.get(s).getSetting(s2).toString();
+            return this.serverMap.get(s).getSetting(s2);
         }
         return null;
     }
@@ -628,6 +628,7 @@ public class ServerManager
     public void setServerInfo(String serverName, String setting, String value) {
         String s4 = null;
         if (!this.serverMap.containsKey(serverName)) {
+        	this.serverMap.put(serverName, new PlayerServer(serverName));
             this.serverMap.get(serverName).setSetting(setting, value);
         }
         else {

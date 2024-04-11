@@ -227,8 +227,30 @@ public class TemplateManager
             for (File plugin : pluginFiles) {
             	this.pl.utils.debug("pluginFile = " + plugin.getPath());
             	File path2 = new File(file.getPath() + File.separator + "PlayerServers.jar");
-            	this.pl.utils.copyFile(plugin, path2);
-                break;
+
+            	try {
+            		Files.createSymbolicLink(path2.toPath(), plugin.toPath(), (FileAttribute<?>[])new FileAttribute[0]);
+                }
+                catch (FileAlreadyExistsException ex2) {
+                	try {
+                		Files.delete(path2.toPath().toAbsolutePath());
+                		linkPS(template);
+                	} catch (IOException e) {
+                		e.printStackTrace();
+                	}
+                	this.pl.utils.debug("Plugin file already existed when trying to create default.");
+                }
+            	catch (FileSystemException | UnsupportedOperationException ex3) {
+            		this.pl.utils.log(Level.WARNING, "Failed to create symbolic link fo PlayerServers plugin .jar to template folder, creating a copy instead.");
+            		this.pl.utils.log(Level.WARNING, "Symbolic links may not be available on Windows, or certain file systems.");
+            		this.pl.utils.log(Level.WARNING, "Be sure to update ALL player server files when updating PlayerServers!");
+            		this.pl.utils.log(Level.WARNING, "You may want to create a script to update them all.");
+            		this.pl.utils.copyFile(plugin, path2);
+            	}
+            	catch (IOException ex) {
+            		this.pl.utils.log(Level.SEVERE, "Failed to copy PlayerServers pl file to template. Please manually add it to the templates pl folder, and/or send this stack trace to the developer.");
+            		ex.printStackTrace();
+                }
             }
         }
     }

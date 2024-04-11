@@ -6,8 +6,6 @@ import java.util.concurrent.*;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 
-import net.kyori.adventure.pointer.Pointered;
-
 import java.util.*;
 
 public class ExpiryTracker
