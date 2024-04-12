@@ -6,6 +6,9 @@ import net.cakemine.playerservers.bungee.objects.PlayerServer;
 import net.cakemine.playerservers.bungee.wrapper.Controller;
 import net.md_5.bungee.api.plugin.*;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 import org.bukkit.plugin.java.JavaPlugin;
@@ -357,4 +360,27 @@ public class PlayerServersAPI {
 		// TODO Auto-generated method stub
 		return this.pl;
 	}
+	
+	// https://github.com/nuckle/minecraft-offline-uuid-generator/blob/main/src/js/uuid.js
+	public static String getOfflineUUID(String name) {
+        if (name == null || name.isEmpty()) {
+            return null;
+        }
+        String input = "OfflinePlayer:" + name;
+
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] hash = md.digest(input.getBytes(StandardCharsets.UTF_8));
+            hash[6] = (byte) ((hash[6] & 0x0f) | 0x30); // Set version to 3
+            hash[8] = (byte) ((hash[8] & 0x3f) | 0x80); // Set variant to RFC 4122
+            StringBuilder uuidBuilder = new StringBuilder();
+            for (byte b : hash) {
+                uuidBuilder.append(String.format("%02x", b));
+            }
+            String uuid = uuidBuilder.toString();
+            return uuid.substring(0, 8) + "-" +uuid.substring(8, 12) + "-" +uuid.substring(12, 16) + "-" +uuid.substring(16, 20) + "-" +uuid.substring(20);
+        } catch (NoSuchAlgorithmException e) {
+            return null;
+        }
+    }
 }
