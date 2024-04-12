@@ -2,6 +2,7 @@ package net.cakemine.playerservers.velocity;
 
 import net.cakemine.playerservers.velocity.events.*;
 import net.cakemine.playerservers.velocity.objects.PlayerServer;
+import net.cakemine.playerservers.velocity.objects.StoredPlayer;
 import net.cakemine.playerservers.velocity.wrapper.Controller;
 
 import java.io.*;
@@ -58,10 +59,6 @@ public class PlayerServersAPI {
     public void clearServerMapSetting(String serverName, String setting) {
         this.pl.serverManager.serverMap.get(serverName).getAllSettings().remove(setting);
         this.pl.eventManager.fire(new ServerModifyEvent(this.pl, setting));
-    }
-    
-    public void saveServerMap() {
-        this.pl.serverManager.saveServerMap();
     }
     
     public List<String> getOnlinePlayerServers() {
@@ -289,7 +286,7 @@ public class PlayerServersAPI {
     }
     
     public void putPlayerMapEntry(String playerName, UUID uuid) {
-        this.pl.putPlayer(playerName, uuid.toString());
+        this.pl.loadPlayer(uuid, new StoredPlayer(uuid));
     }
     
     public boolean removePlayerMapEntry(String playerName) {
@@ -298,20 +295,6 @@ public class PlayerServersAPI {
             return true;
         }
         return false;
-    }
-    
-    public boolean removedPlayerMapEntryUUID(UUID uuid) {
-        boolean b = false;
-        if (this.pl.playerMap.containsValue(uuid.toString())) {
-            Iterator<Map.Entry<String, String>> iterator = this.pl.playerMap.entrySet().iterator();
-            while (iterator.hasNext()) {
-                if (iterator.next().getValue().equals(uuid.toString())) {
-                    iterator.remove();
-                    b = true;
-                }
-            }
-        }
-        return b;
     }
     
     public File[] listFiles(File file) {

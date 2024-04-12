@@ -20,12 +20,6 @@ public class RepeatTasks implements Runnable
     @Override
     public void run() {
         try {
-            if (!this.pl.onlineMode && this.pl.playerMapChanged) {
-                this.pl.savePlayers();
-            }
-            if (this.pl.permMapChanged) {
-                this.pl.savePermissions();
-            }
             if (this.pl.ctrl != null && !this.pl.ctrl.getSocket().isClosed()) {
                 this.pl.ctrl.send("+heartbeat " + System.currentTimeMillis());
             }

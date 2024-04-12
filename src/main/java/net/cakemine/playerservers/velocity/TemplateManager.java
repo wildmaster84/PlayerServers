@@ -229,7 +229,7 @@ public class TemplateManager
             	File path2 = new File(file.getPath() + File.separator + "PlayerServers.jar");
 
             	try {
-            		Files.createSymbolicLink(path2.toPath(), plugin.toPath(), (FileAttribute<?>[])new FileAttribute[0]);
+            		Files.createSymbolicLink(path2.toPath(), plugin.toPath().toAbsolutePath(), (FileAttribute<?>[])new FileAttribute[0]);
                 }
                 catch (FileAlreadyExistsException ex2) {
                 	try {

@@ -1,6 +1,7 @@
 package net.cakemine.playerservers.velocity;
 
 import net.cakemine.playerservers.velocity.objects.PlayerServer;
+import net.cakemine.playerservers.velocity.objects.StoredPlayer;
 import net.cakemine.playerservers.velocity.commands.*;
 import net.cakemine.playerservers.velocity.wrapper.*;
 import net.cakemine.playerservers.velocity.sync.*;
@@ -45,16 +46,14 @@ public class PlayerServers {
     public Utils utils;
     public Yaml yaml;
     protected HashMap<String, Object> config;
-    public HashMap<String, HashMap<String, HashMap<String, HashMap<String, String>>>> serverStore;
     protected HashMap<String, HashMap<String, String>> messages;
     protected HashMap<String, Object> guis;
-    protected HashMap<String, Object> playerStore;
     protected HashMap<String, HashMap<String, Object>> online;
     public HashMap<String, HashMap<String, String>> permMap;
     public List<String> blockedCmds;
     public List<String> alwaysOP;
     public HashMap<String, String> msgMap;
-    public TreeMap<String, String> playerMap;
+    public HashMap<UUID, StoredPlayer> playerMap;
     public String prefix;
     public String fallbackSrv;
     public String serversFolder;
@@ -107,7 +106,7 @@ public class PlayerServers {
         this.utils = new Utils(this);
         this.permMap = new HashMap<String, HashMap<String, String>>();
         this.msgMap = new HashMap<String, String>();
-        this.playerMap = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
+        this.playerMap = new HashMap<UUID, StoredPlayer>();
         this.debug = true;
         this.useExpiry = true;
         this.resetExpiry = false;
@@ -175,7 +174,6 @@ public class PlayerServers {
     
     public void reload() {
         String psCommand = this.psCommand;
-        this.playerMap.clear();
         this.msgMap.clear();
         this.serverManager.serverMap.clear();
         this.templateManager.templates.clear();
@@ -185,9 +183,6 @@ public class PlayerServers {
         this.vers = "565421"; // Don't modify this!
         this.loadMsgs();
         this.loadGUIs();
-        this.loadServers();
-        this.loadPlayers();
-        this.loadPermissions();
         this.templateManager.loadTemplates();
         this.utils.vCheck();
         this.sender.reSyncAll();
@@ -218,15 +213,29 @@ public class PlayerServers {
             this.getDataFolder().mkdir();
         }
         File config = new File(this.getDataFolder(), "config.yml");
-        File servers = new File(this.getDataFolder(), "servers.yml");
         File messages = new File(this.getDataFolder(), "messages.yml");
         File guis = new File(this.getDataFolder(), "guis.yml");
-        File players = new File(this.getDataFolder(), "players.yml");
         if (!config.exists()) this.copyResource(config);
-        if (!servers.exists()) this.copyResource(servers);
         if (!messages.exists()) this.copyResource(messages);
         if (!guis.exists()) this.copyResource(guis);
-        if (!players.exists()) this.copyResource(players);
+        
+        File serverFolder = new File(this.getDataFolder() + File.separator + "data" + File.separator + "servers");
+        this.utils.debug("serverDir = " + serverFolder.toString());
+        if (!serverFolder.exists()) {
+        	serverFolder.mkdirs();
+        }
+        
+        File playersFolder = new File(this.getDataFolder() + File.separator + "data" + File.separator + "players");
+        this.utils.debug("playerDir = " + playersFolder.toString());
+        if (!playersFolder.exists()) {
+        	playersFolder.mkdirs();
+        }
+        
+        File file = new File(this.getDataFolder() + File.separator + "servers");
+        this.utils.debug("serverDir = " + file.toString());
+        if (!file.exists()) {
+            file.mkdir();
+        }
         
 		try {
 			InputStream inputStream = new FileInputStream(this.getDataFolder().getPath() + File.separator + "config.yml");
@@ -234,12 +243,6 @@ public class PlayerServers {
 		} catch (FileNotFoundException | UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}        
-		try {
-			InputStream inputStream2 = new FileInputStream(this.getDataFolder().getPath() + File.separator + "servers.yml");
-			this.serverStore = yaml.load(new InputStreamReader(inputStream2, "UTF-8"));
-		} catch (FileNotFoundException | UnsupportedEncodingException e) {
-			e.printStackTrace();
-		}
         
 		try {
 			InputStream inputStream3 = new FileInputStream(this.getDataFolder().getPath() + File.separator + "messages.yml");
@@ -251,13 +254,6 @@ public class PlayerServers {
 		try {
 			InputStream inputStream4 = new FileInputStream(this.getDataFolder().getPath() + File.separator + "guis.yml");
 			this.guis = yaml.load(new InputStreamReader(inputStream4, "UTF-8"));
-		} catch (FileNotFoundException | UnsupportedEncodingException e) {
-			e.printStackTrace();
-		}
-        		
-		try {
-			InputStream inputStream5 = new FileInputStream(this.getDataFolder().getPath() + File.separator + "players.yml");
-			this.playerStore = yaml.load(new InputStreamReader(inputStream5, "UTF-8"));
 		} catch (FileNotFoundException | UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
@@ -862,22 +858,6 @@ public class PlayerServers {
         }
     }
     
-    public void loadServers() {
-        File file = new File(this.getDataFolder() + File.separator + "servers");
-        this.utils.debug("serverDir = " + file.toString());
-        if (!file.exists()) {
-            file.mkdir();
-        }
-        this.utils.debug("servers config class = " + this.serverStore.get("servers").getClass());
-        this.serverManager.serverMap.clear();
-        if (this.serverStore.get("servers") != null ) {
-        	((HashMap<String,HashMap<String,HashMap<String,String>>>)this.serverStore.get("servers")).keySet().forEach(server -> {
-            	this.serverManager.serverMap.put(server, new PlayerServer(UUID.fromString(server)));
-            });
-        }
-        this.utils.log(this.serverManager.serverMap.size() + " player servers saved.");
-    }
-    
     public void loadOnlineServers() {
         if (!this.getDataFolder().exists()) {
             this.getDataFolder().mkdir();
@@ -901,90 +881,9 @@ public class PlayerServers {
 		});
     }
     
-
-	public void loadPermissions() {
-        if (this.playerStore.get("permissions") == null) {
-        	this.playerStore.put("permissions", this.permMap);
-            this.saveConfig(this.playerStore, "players.yml");
-        }
-        else {
-            this.permMap.clear();
-            
-            if (this.playerStore.get("permissions") instanceof HashMap) {
-                this.permMap = (HashMap<String, HashMap<String, String>>)this.playerStore.get("permissions");
-            }
-        }
-        HashMap<String, HashMap<String, String>> hashMap = new HashMap<String, HashMap<String, String>>();
-        boolean b = false;
-        for (Map.Entry<String, HashMap<String, String>> entry : this.permMap.entrySet()) {
-            HashMap<String, String> permissions = new HashMap<String, String>();
-            for (Map.Entry<String, String> perms : entry.getValue().entrySet()) {
-                if (perms.getValue().equalsIgnoreCase("true")) {
-                	permissions.put(perms.getKey(), perms.getValue());
-                }
-                else {
-                    b = true;
-                }
-            }
-            if (permissions.size() > 0) {
-                hashMap.put(entry.getKey(), permissions);
-            }
-        }
-        if (b && !this.permMap.equals(hashMap)) {
-            this.permMap.clear();
-            this.permMap.putAll(hashMap);
-            this.permMapChanged = true;
-        }
-    }
-    
-    public void savePermissions() {
-    	this.playerStore.put("permissions", this.permMap);
-        this.proxy.getScheduler()
-        .buildTask(this.pl, () -> {
-        	saveConfig(this.playerStore, "players.yml");
-        })
-        .delay(2L, TimeUnit.SECONDS)
-        .schedule();
-    }
-    
-    public void loadPlayers() {
-        if (this.onlineMode && this.playerStore.get("players") != null) {
-            this.utils.log(Level.WARNING, "Removing all players from players.yml file, no need to store them anymore!");
-            this.playerStore.put("players", null);
-            saveConfig(this.playerStore, "players.yml");
-        }
-        if (!this.onlineMode) {
-            this.playerMap.clear();
-            if (this.playerStore.get("players") == null) {
-            	this.playerStore.put("players", this.playerMap);
-                this.savePlayers();
-            }
-            if (this.playerStore.get("players") != null && this.playerStore.get("players") instanceof TreeMap) {
-                this.playerMap = (TreeMap<String, String>)this.playerStore.get("players");
-            }
-            else if ((this.playerStore.get("players") != null && this.playerStore.get("players") instanceof HashMap) || this.playerStore.get("players") instanceof LinkedHashMap) {
-                this.playerMap.putAll((Map<? extends String, ? extends String>)this.playerStore.get("players"));
-            }
-            else {
-                this.utils.log(Level.SEVERE, "Invalid players.yml formatting!");
-            }
-            this.utils.log(this.playerMap.size() + " saved players loaded.");
-        }
-    }
-    
-    public void putPlayer(String s, String s2) {
+    public void loadPlayer(UUID s, StoredPlayer s2) {
         this.playerMap.put(s, s2);
         this.playerMapChanged = true;
-    }
-    
-    public void savePlayers() {
-    	this.playerStore.put("players", this.playerMap);
-        this.proxy.getScheduler()
-        .buildTask(this.pl, () -> {
-        	saveConfig(this.playerStore, "players.yml");
-        	
-        })
-        .schedule();
     }
     
     public void copyResource(File file) {

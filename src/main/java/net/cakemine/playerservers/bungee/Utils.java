@@ -5,6 +5,8 @@ import net.md_5.bungee.api.chat.*;
 import java.util.concurrent.*;
 import com.google.common.base.*;
 import java.util.*;
+import java.util.Map.Entry;
+
 import com.google.gson.*;
 import java.io.*;
 import java.net.*;
@@ -13,6 +15,7 @@ import java.util.regex.*;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import net.cakemine.playerservers.bungee.objects.PlayerServer;
+import net.cakemine.playerservers.bungee.objects.StoredPlayer;
 import net.md_5.bungee.api.*;
 import net.md_5.bungee.api.connection.*;
 
@@ -250,14 +253,10 @@ public class Utils
     
     public String getUUID(String s) {
         long currentTimeMillis = System.currentTimeMillis();
-        if (this.pl.playerMap.containsKey(s)) {
-            this.debug("Finished lookup (direct): " + (System.currentTimeMillis() - currentTimeMillis) + "ms later.");
-            return this.pl.playerMap.get(s);
-        }
-        for (String s2 : this.pl.playerMap.keySet()) {
-            if (s2.equalsIgnoreCase(s)) {
+        for (Entry<UUID, StoredPlayer> s2 : this.pl.playerMap.entrySet()) {
+            if (s2.getValue().getUsername().equalsIgnoreCase(s)) {
                 this.debug("Finished lookup (loop): " + (System.currentTimeMillis() - currentTimeMillis) + "ms later.");
-                return this.pl.playerMap.get(s2);
+                return this.pl.playerMap.get(s2.getKey()).getUniqueId().toString();
             }
         }
         if (this.pl.proxy.getConfig().isOnlineMode()) {
@@ -273,12 +272,12 @@ public class Utils
     }
     
     public String fetchUUID(String s) {
-        if (this.pl.playerMap.containsKey(s)) {
-            return this.pl.playerMap.get(s);
-        }
         if (!this.pl.proxy.getConfig().isOnlineMode()) {
             this.pl.utils.debug("Offline mode network, generating UUID from OfflinePlayer name.");
             return UUID.nameUUIDFromBytes(("OfflinePlayer:" + s).getBytes(Charsets.UTF_8)).toString();
+        }
+        for (Entry<UUID, StoredPlayer> cache : this.pl.playerMap.entrySet()) {
+        	if (cache.getValue().getUsername().equals(s)) return cache.getValue().getUniqueId().toString();
         }
         FutureTask<String> futureTask = new FutureTask<String>(new Callable<String>() {
             @Override
@@ -295,7 +294,7 @@ public class Utils
                     JsonObject jsonObject2 = (JsonObject)new Gson().fromJson(line2, JsonObject.class);
                     if (jsonObject2.get("code").getAsString().contains("player.found")) {
                         String uuid = jsonObject2.getAsJsonObject("data").getAsJsonObject("player").get("id").getAsString();
-                        Utils.this.pl.putPlayer(s, uuid);
+                        Utils.this.pl.loadPlayer(UUID.fromString(uuid), new StoredPlayer(UUID.fromString(uuid)));
                         Utils.this.debug("fetchUUID from PlayerDB.com returns " + uuid);
                         return uuid;
                     }
@@ -324,7 +323,7 @@ public class Utils
                     JsonObject jsonObject3 = (JsonObject)new Gson().fromJson(line3, JsonObject.class);
                     if (jsonObject3.get("error") == null) {
                         String replaceAll = jsonObject3.get("id").getAsString().replaceAll("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5");
-                        Utils.this.pl.putPlayer(s, replaceAll);
+                        Utils.this.pl.loadPlayer(UUID.fromString(replaceAll), new StoredPlayer(UUID.fromString(replaceAll)));
                         Utils.this.debug("fetchUUID from Mojang returns " + replaceAll);
                         return replaceAll;
                     }
@@ -362,11 +361,9 @@ public class Utils
     }
     
     public String fetchName(String s) {
-        if (this.pl.playerMap.containsValue(s)) {
-            for (Map.Entry<String, String> entry : this.pl.playerMap.entrySet()) {
-                if (entry.getValue().equals(s)) {
-                    return entry.getKey();
-                }
+    	for (Entry<UUID, StoredPlayer> entry : this.pl.playerMap.entrySet()) {
+            if (entry.getValue().getUsername().equals(s)) {
+                return entry.getValue().getUsername();
             }
         }
         if (!this.pl.proxy.getConfig().isOnlineMode()) {
@@ -387,7 +384,7 @@ public class Utils
                     JsonObject jsonObject2 = (JsonObject)new Gson().fromJson(line2, JsonObject.class);
                     if (jsonObject2.get("code").getAsString().contains("player.found")) {
                         String uuid = jsonObject2.getAsJsonObject("data").getAsJsonObject("player").get("username").getAsString();
-                        Utils.this.pl.putPlayer(s, uuid);
+                        Utils.this.pl.loadPlayer(UUID.fromString(uuid), new StoredPlayer(UUID.fromString(uuid)));
                         Utils.this.debug("fetchUUID from PlayerDB.com returns " + uuid);
                         return uuid;
                     }
@@ -431,20 +428,18 @@ public class Utils
             Thread.dumpStack();
             return null;
         }
-        if (this.pl.playerMap.containsValue(s)) {
-            for (Map.Entry<String, String> entry : this.pl.playerMap.entrySet()) {
-                if (entry.getKey() == null) {
-                    this.pl.utils.log(Level.WARNING, "A playerMap key was null!");
+        for (Entry<UUID, StoredPlayer> entry : this.pl.playerMap.entrySet()) {
+            if (entry.getKey() == null) {
+                this.pl.utils.log(Level.WARNING, "A playerMap key was null!");
+            }
+            else if (entry.getValue() == null) {
+                this.pl.utils.log(Level.WARNING, entry.getKey() + "'s playerMap value was null!");
+            }
+            else {
+                if (entry.getValue().getUsername().equals(s)) {
+                    continue;
                 }
-                else if (entry.getValue() == null) {
-                    this.pl.utils.log(Level.WARNING, entry.getKey() + "'s playerMap value was null!");
-                }
-                else {
-                    if (!entry.getValue().equals(s)) {
-                        continue;
-                    }
-                    fetchName = entry.getKey();
-                }
+                fetchName = entry.getValue().getUsername();
             }
         }
         if (fetchName == null) {

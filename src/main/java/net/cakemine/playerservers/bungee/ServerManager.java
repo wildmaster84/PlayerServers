@@ -39,28 +39,6 @@ public class ServerManager
         this.pl = pl;
     }
     
-    public void saveServerMap() {
-    	HashMap<String, Object> server = new HashMap<>();
-    	HashMap<String, HashMap<String, String>> settings = new HashMap<>();
-    	for (Map.Entry<String, PlayerServer> entry : this.serverMap.entrySet()) {
-    		server.clear();
-    		settings.clear();    		
-    		
-    		settings.put("custom", this.serverMap.get(entry.getKey()).getAllCustomSettings());
-    		settings.put("settings", this.serverMap.get(entry.getKey()).getAllSettings());
-    		server.put(entry.getKey(), settings);
-    		
-        }
-    	this.pl.serverStore.set("servers", server);
-        File file = new File(this.pl.getDataFolder(), "servers.yml");
-        try {
-            this.pl.cfg.save(this.pl.serverStore, file);
-        }
-        catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
-    
     public void startupSrv(String s, CommandSender commandSender) {
     	if (!pl.running.contains(s)) {
     		pl.running.add(s);
@@ -374,12 +352,10 @@ public class ServerManager
     }
     
     public boolean createServer(ProxiedPlayer proxiedPlayer, File file) {
-    	this.pl.utils.debug("createServer Fired");
         return this.createServer((CommandSender)proxiedPlayer, proxiedPlayer.getName(), proxiedPlayer.getUniqueId().toString(), file);
     }
     
     public boolean createServer(CommandSender commandSender, String s, String s2, File templateFile) {
-    	this.pl.utils.debug("createServer var");
         if (!this.pl.templateManager.templateDone()) {
             if (commandSender != null) {
                 this.pl.utils.sendMsg(commandSender, "&c&lYou must setup a default template before creating servers!||&e&oPut a server .jar file in the||&e&oBungee plugins/PlayerServers/templates/default folder.");
@@ -656,7 +632,7 @@ public class ServerManager
             this.serverMap.get(s).setSetting(s2, s3);
             s4 = this.serverMap.get(s).getSetting(s2);
         }
-        this.saveServerMap();
+        this.serverMap.get(s).save();
         if (s4 == null || !s4.equals(s3)) {
             ArrayList<String> list = new ArrayList<String>();
             list.add("server-name");

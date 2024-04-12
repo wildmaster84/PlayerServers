@@ -15,6 +15,7 @@ import com.velocitypowered.api.proxy.server.ServerInfo;
 import java.util.*;
 import java.util.concurrent.*;
 import net.cakemine.playerservers.velocity.events.*;
+import net.cakemine.playerservers.velocity.objects.StoredPlayer;
 
 public class Listeners {
     PlayerServers pl;
@@ -59,10 +60,10 @@ public class Listeners {
         Player player = postLoginEvent.getPlayer();
         if (player != null) {
             String string = player.getUniqueId().toString();
-            if (!this.pl.playerMap.containsKey(player.getUsername()) || !this.pl.playerMap.containsValue(string) || !this.pl.playerMap.get(player.getUsername()).equals(string)) {
-                this.pl.putPlayer(player.getUsername(), string);
+            if (!this.pl.playerMap.containsKey(player.getUniqueId())) {
+                this.pl.loadPlayer(player.getUniqueId(), new StoredPlayer(player.getUniqueId()));
             }
-            if (this.pl.serverManager.hasServer(string) && !this.pl.serverManager.getServerInfo(string, "player-name").equals(player.getUsername())) {
+            if (this.pl.serverManager.hasServer(player.getUniqueId().toString()) && !this.pl.serverManager.getServerInfo(string, "player-name").equals(player.getUsername())) {
                 this.pl.utils.log(player.getUsername() + " has changed their name. Updating their server.");
                 if (this.pl.utils.getSrvName(string).equals(this.pl.serverManager.getServerInfo(string, "player-name"))) {
                     this.pl.serverManager.setServerInfo(string, "server-name", player.getUsername());
@@ -117,6 +118,7 @@ public class Listeners {
         if (player != null && !player.getCurrentServer().isEmpty()) {
             ServerConnection server = player.getCurrentServer().get();
             UUID uniqueId = player.getUniqueId();
+            this.pl.playerMap.get(player.getUniqueId()).save();
             if (server != null && this.pl.serverManager.isPlayerServer(server.getServerInfo().getName())) {
                 ServerLeaveEvent serverLeaveEvent = new ServerLeaveEvent(this.pl, server.getServerInfo(), uniqueId);
                 this.pl.eventManager.fire(serverLeaveEvent);

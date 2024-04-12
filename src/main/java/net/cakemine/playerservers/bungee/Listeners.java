@@ -11,6 +11,7 @@ import java.util.concurrent.*;
 import net.md_5.bungee.api.plugin.*;
 import net.md_5.bungee.api.event.*;
 import net.cakemine.playerservers.bungee.events.*;
+import net.cakemine.playerservers.bungee.objects.StoredPlayer;
 
 public class Listeners implements Listener
 {
@@ -58,10 +59,11 @@ public class Listeners implements Listener
         ProxiedPlayer player = postLoginEvent.getPlayer();
         if (player != null) {
             String string = player.getUniqueId().toString();
-            if (!this.pl.playerMap.containsKey(player.getName()) || !this.pl.playerMap.containsValue(string) || !this.pl.playerMap.get(player.getName()).equals(string)) {
-                this.pl.putPlayer(player.getName(), string);
+            if (!this.pl.playerMap.containsKey(player.getUniqueId())) {
+            	// Maybe save after loading?
+                this.pl.loadPlayer(player.getUniqueId(), new StoredPlayer(player.getUniqueId()));
             }
-            if (this.pl.serverManager.hasServer(string) && !this.pl.serverManager.getServerInfo(string, "player-name").equals(player.getName())) {
+            if (this.pl.serverManager.hasServer(player.getUniqueId().toString()) && !this.pl.serverManager.getServerInfo(string, "player-name").equals(player.getName())) {
                 this.pl.utils.log(player.getName() + " has changed their name. Updating their server.");
                 if (this.pl.utils.getSrvName(string).equals(this.pl.serverManager.getServerInfo(string, "player-name"))) {
                     this.pl.serverManager.setServerInfo(string, "server-name", player.getName());
@@ -117,6 +119,7 @@ public class Listeners implements Listener
         if (player != null) {
             Server server = player.getServer();
             UUID uniqueId = player.getUniqueId();
+            this.pl.playerMap.get(player.getUniqueId()).save();
             if (server != null && this.pl.serverManager.isPlayerServer(server.getInfo().getName())) {
                 ServerLeaveEvent serverLeaveEvent = (ServerLeaveEvent)this.pl.proxy.getPluginManager().callEvent((Event)new ServerLeaveEvent(this.pl, server.getInfo(), uniqueId));
             }

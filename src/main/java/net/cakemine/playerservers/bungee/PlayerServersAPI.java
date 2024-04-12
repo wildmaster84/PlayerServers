@@ -3,6 +3,7 @@ package net.cakemine.playerservers.bungee;
 import net.md_5.bungee.api.connection.*;
 import net.cakemine.playerservers.bungee.events.*;
 import net.cakemine.playerservers.bungee.objects.PlayerServer;
+import net.cakemine.playerservers.bungee.objects.StoredPlayer;
 import net.cakemine.playerservers.bungee.wrapper.Controller;
 import net.md_5.bungee.api.plugin.*;
 import java.io.*;
@@ -10,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.Map.Entry;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -66,10 +68,6 @@ public class PlayerServersAPI {
     public void clearServerMapSetting(String serverName, String setting) {
         this.pl.serverManager.serverMap.get(serverName).getAllSettings().remove(setting);
         this.pl.proxy.getPluginManager().callEvent(new ServerModifyEvent(this.pl, setting));
-    }
-    
-    public void saveServerMap() {
-        this.pl.serverManager.saveServerMap();
     }
     
     public List<String> getOnlinePlayerServers() {
@@ -297,29 +295,17 @@ public class PlayerServersAPI {
     }
     
     public void putPlayerMapEntry(String playerName, UUID uuid) {
-        this.pl.putPlayer(playerName, uuid.toString());
+        this.pl.loadPlayer(uuid, new StoredPlayer(uuid));
     }
     
     public boolean removePlayerMapEntry(String playerName) {
-        if (this.pl.playerMap.containsKey(playerName)) {
-            this.pl.playerMap.remove(playerName);
-            return true;
-        }
+    	for (Entry<UUID, StoredPlayer> cache : this.pl.playerMap.entrySet()) {
+    		if (cache.getValue().getUsername() == playerName) {
+    			this.pl.playerMap.remove(cache.getValue().getUniqueId());
+    			return true;
+    		}
+    	}
         return false;
-    }
-    
-    public boolean removedPlayerMapEntryUUID(UUID uuid) {
-        boolean b = false;
-        if (this.pl.playerMap.containsValue(uuid.toString())) {
-            Iterator<Map.Entry<String, String>> iterator = this.pl.playerMap.entrySet().iterator();
-            while (iterator.hasNext()) {
-                if (iterator.next().getValue().equals(uuid.toString())) {
-                    iterator.remove();
-                    b = true;
-                }
-            }
-        }
-        return b;
     }
     
     public File[] listFiles(File file) {

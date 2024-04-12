@@ -3,6 +3,7 @@ package net.cakemine.playerservers.bungee;
 import net.md_5.bungee.api.*;
 import net.cakemine.playerservers.bungee.commands.*;
 import net.cakemine.playerservers.bungee.objects.PlayerServer;
+import net.cakemine.playerservers.bungee.objects.StoredPlayer;
 import net.md_5.bungee.api.connection.*;
 import net.cakemine.playerservers.bungee.wrapper.*;
 import net.md_5.bungee.config.*;
@@ -30,18 +31,16 @@ public class PlayerServers extends Plugin {
     public PlayerServerCMD playerServer;
     protected static PlayerServersAPI api;
     public Utils utils;
-    protected ConfigurationProvider cfg;
+    public ConfigurationProvider cfg;
     protected Configuration config;
-    public Configuration serverStore;
     protected Configuration messages;
     protected Configuration guis;
-    protected Configuration playerStore;
     protected Configuration online;
     public HashMap<String, HashMap<String, String>> permMap;
     public List<String> blockedCmds;
     public List<String> alwaysOP;
     public HashMap<String, String> msgMap;
-    public TreeMap<String, String> playerMap;
+    public HashMap<UUID, StoredPlayer> playerMap;
     public String prefix;
     public String fallbackSrv;
     public String serversFolder;
@@ -86,7 +85,7 @@ public class PlayerServers extends Plugin {
         this.cfg = ConfigurationProvider.getProvider(YamlConfiguration.class);
         this.permMap = new HashMap<String, HashMap<String, String>>();
         this.msgMap = new HashMap<String, String>();
-        this.playerMap = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
+        this.playerMap = new HashMap<UUID, StoredPlayer>();
         this.debug = true;
         this.useExpiry = true;
         this.resetExpiry = false;
@@ -141,7 +140,6 @@ public class PlayerServers extends Plugin {
     
     public void reload() {
         String psCommand = this.psCommand;
-        this.playerMap.clear();
         this.msgMap.clear();
         this.serverManager.serverMap.clear();
         this.templateManager.templates.clear();
@@ -152,8 +150,6 @@ public class PlayerServers extends Plugin {
         this.loadMsgs();
         this.loadGUIs();
         this.loadServers();
-        this.loadPlayers();
-        this.loadPermissions();
         this.templateManager.loadTemplates();
         this.utils.vCheck();
         this.sender.reSyncAll();
@@ -185,15 +181,6 @@ public class PlayerServers extends Plugin {
             this.utils.log(Level.SEVERE, "Failed to load config.yml file! Please send this stack trace to the developer.");
             ex.printStackTrace();
         }
-        File file2 = new File(this.getDataFolder(), "servers.yml");
-        this.copyResource(file2);
-        try {
-            this.serverStore = this.cfg.load(file2);
-        }
-        catch (IOException ex2) {
-            this.utils.log(Level.SEVERE, "Failed to load servers.yml file! Please send this stack trace to the developer.");
-            ex2.printStackTrace();
-        }
         File file3 = new File(this.getDataFolder(), "messages.yml");
         this.copyResource(file3);
         try {
@@ -213,14 +200,22 @@ public class PlayerServers extends Plugin {
             this.utils.log(Level.SEVERE, "Failed to load GUIs.yml file! Please send this stack trace to the developer!");
         }
         
-        File file5 = new File(this.getDataFolder(), "players.yml");
-        this.copyResource(file5);
-        try {
-            this.playerStore = this.cfg.load(file5);
+        File serverFolder = new File(this.getDataFolder() + File.separator + "data" + File.separator + "servers");
+        this.utils.debug("serverDir = " + serverFolder.toString());
+        if (!serverFolder.exists()) {
+        	serverFolder.mkdirs();
         }
-        catch (IOException ex4) {
-            this.utils.log(Level.SEVERE, "Failed to load players.yml file! Please send this stack trace to the developer.");
-            ex4.printStackTrace();
+        
+        File playersFolder = new File(this.getDataFolder() + File.separator + "data" + File.separator + "players");
+        this.utils.debug("playerDir = " + playersFolder.toString());
+        if (!playersFolder.exists()) {
+        	playersFolder.mkdirs();
+        }
+        
+        File server = new File(this.getDataFolder() + File.separator + "servers");
+        this.utils.debug("serverDir = " + file.toString());
+        if (!server.exists()) {
+        	server.mkdir();
         }
     }
     
@@ -834,17 +829,24 @@ public class PlayerServers extends Plugin {
     }
     
     public void loadServers() {
-        File file = new File(this.getDataFolder() + File.separator + "servers");
-        this.utils.debug("serverDir = " + file.toString());
-        if (!file.exists()) {
-            file.mkdir();
+        File serverFolder = new File(this.getDataFolder() + File.separator + "data" + File.separator + "servers");
+        this.utils.debug("serverDir = " + serverFolder.toString());
+        if (!serverFolder.exists()) {
+        	serverFolder.mkdirs();
         }
-        this.utils.debug("servers config class = " + this.serverStore.get("servers").getClass());
-        this.serverManager.serverMap.clear();
-        if (this.serverStore.get("servers") != null ) {
-        	this.serverStore.getSection("servers").getKeys().forEach(server -> {
-            	this.serverManager.serverMap.put(server, new PlayerServer(UUID.fromString(server)));
-            });
+        if (serverFolder.listFiles() != null) {
+        	for (File serverFile : serverFolder.listFiles()) {
+    			try {
+    				Configuration data = this.cfg.load(serverFile);
+    				if (data.getKeys() != null ) {
+    	        		data.getKeys().forEach(server -> {
+    	                	this.serverManager.serverMap.put(server, new PlayerServer(UUID.fromString(server)));
+    	                });
+    	            }
+    			} catch (IOException e) {
+    				e.printStackTrace();
+    			}
+            }
         }
         this.utils.log(this.serverManager.serverMap.size() + " player servers saved.");
     }
@@ -880,115 +882,9 @@ public class PlayerServers extends Plugin {
         }
     }
     
-    public void loadPermissions() {
-        if (this.playerStore.get("permissions") == null) {
-            this.playerStore.set("permissions", this.permMap);
-            this.saveConfig(this.playerStore, "players.yml");
-        }
-        else {
-            this.permMap.clear();
-            
-            if (this.playerStore.get("permissions") instanceof HashMap) {
-            	// No way in hell will this work (needs to pass a player to cache permissions)
-                this.permMap = (HashMap<String, HashMap<String, String>>)this.playerStore.get("permissions");
-            }
-        }
-        HashMap<String, HashMap<String, String>> hashMap = new HashMap<String, HashMap<String, String>>();
-        boolean b = false;
-        for (Map.Entry<String, HashMap<String, String>> entry : this.permMap.entrySet()) {
-            HashMap<String, String> permissions = new HashMap<String, String>();
-            for (Map.Entry<String, String> perms : entry.getValue().entrySet()) {
-                if (perms.getValue().equalsIgnoreCase("true")) {
-                	permissions.put(perms.getKey(), perms.getValue());
-                }
-                else {
-                    b = true;
-                }
-            }
-            if (permissions.size() > 0) {
-                hashMap.put(entry.getKey(), permissions);
-            }
-        }
-        if (b && !this.permMap.equals(hashMap)) {
-            this.permMap.clear();
-            this.permMap.putAll(hashMap);
-            this.permMapChanged = true;
-        }
-    }
-    
-    public void savePermissions() {
-        this.playerStore.set("permissions", this.permMap);
-        this.proxy.getScheduler().runAsync(this, new Runnable() {
-            /* synthetic */ File val$file = new File(PlayerServers.this.getDataFolder(), "players.yml");
-            
-            @Override
-            public void run() {
-                try {
-                    PlayerServers.this.cfg.save(PlayerServers.this.playerStore, this.val$file);
-                }
-                catch (IOException ex) {
-                    PlayerServers.this.utils.log(Level.SEVERE, "Failed to save permissions to player.yml file.");
-                    ex.printStackTrace();
-                }
-                PlayerServers.this.permMapChanged = false;
-            }
-        });
-    }
-    
-    public void loadPlayers() {
-        if (this.onlineMode && this.playerStore.get("players") != null) {
-            this.utils.log(Level.WARNING, "Removing all players from players.yml file, no need to store them anymore!");
-            this.playerStore.set("players", null);
-            File file = new File(this.getDataFolder(), "players.yml");
-            try {
-                this.cfg.save(this.playerStore, file);
-            }
-            catch (IOException ex) {
-                this.utils.log(Level.SEVERE, "Failed to save players to player.yml file.");
-                ex.printStackTrace();
-            }
-        }
-        if (!this.onlineMode) {
-            this.playerMap.clear();
-            if (this.playerStore.get("players") == null) {
-                this.playerStore.set("players", this.playerMap);
-                this.savePlayers();
-            }
-            if (this.playerStore.get("players") != null && this.playerStore.get("players") instanceof TreeMap) {
-                this.playerMap = (TreeMap<String, String>)this.playerStore.get("players");
-            }
-            else if ((this.playerStore.get("players") != null && this.playerStore.get("players") instanceof HashMap) || this.playerStore.get("players") instanceof LinkedHashMap) {
-                this.playerMap.putAll((Map<? extends String, ? extends String>)this.playerStore.get("players"));
-            }
-            else {
-                this.utils.log(Level.SEVERE, "Invalid players.yml formatting!");
-            }
-            this.utils.log(this.playerMap.size() + " saved players loaded.");
-        }
-    }
-    
-    public void putPlayer(String s, String s2) {
+    public void loadPlayer(UUID s, StoredPlayer s2) {
         this.playerMap.put(s, s2);
         this.playerMapChanged = true;
-    }
-    
-    public void savePlayers() {
-        this.playerStore.set("players", this.playerMap);
-        this.proxy.getScheduler().runAsync(this, new Runnable() {
-            File file = new File(PlayerServers.this.getDataFolder(), "players.yml");
-            
-            @Override
-            public void run() {
-                try {
-                    PlayerServers.this.cfg.save(PlayerServers.this.playerStore, this.file);
-                }
-                catch (IOException ex) {
-                    PlayerServers.this.utils.log(Level.SEVERE, "Failed to save players to player.yml file.");
-                    ex.printStackTrace();
-                }
-                PlayerServers.this.playerMapChanged = false;
-            }
-        });
     }
     
     public void copyResource(File file) {

@@ -45,22 +45,6 @@ public class ServerManager
         this.pl = pl;
     }
     
-    public void saveServerMap() {
-    	HashMap<String, HashMap<String, HashMap<String, String>>> server = new HashMap<>();
-    	HashMap<String, HashMap<String, String>> settings = new HashMap<>();
-    	for (Map.Entry<String, PlayerServer> entry : this.serverMap.entrySet()) {
-    		server.clear();
-    		settings.clear();    		
-    		
-    		settings.put("custom", this.serverMap.get(entry.getKey()).getAllCustomSettings());
-    		settings.put("settings", this.serverMap.get(entry.getKey()).getAllSettings());
-    		server.put(entry.getKey(), settings);
-    		
-        }
-    	this.pl.serverStore.put("servers", server);
-        this.pl.saveConfig(this.pl.serverStore, "servers.yml");
-    }
-    
     public void startupSrv(String s, CommandSource commandSender) {
     	if (!pl.running.contains(s)) {
     		pl.running.add(s);
@@ -373,6 +357,8 @@ public class ServerManager
             }
             return false;
         }
+        this.serverMap.put(commandSender.getUniqueId().toString(), new PlayerServer(commandSender.getUniqueId()));
+        
         this.pl.utils.debug("templateFolder was: " + templateFile.getName() + " | getTemplate returns: " + serverCreateEvent.getTemplate());
         templateFile = this.pl.templateManager.getTemplateFile(serverCreateEvent.getTemplate());
         if (commandSender != null && !this.pl.utils.hasPerm(commandSender, "playerservers.templates.*") && !this.pl.utils.hasPerm(commandSender, "playerservers.templates.all") && this.pl.utils.hasPerm(commandSender, "playerservers.templates." + templateFile.getName()) && (this.pl.utils.hasPerm(commandSender, "playerservers.templates." + this.pl.templateManager.getTemplateSetting(templateFile, "template-name")) || this.pl.utils.hasPerm(commandSender, "playerservers.template.*") || this.pl.utils.hasPerm(commandSender, "playerservers.template.all")) && this.pl.utils.hasPerm(commandSender, "playerservers.template." + templateFile.getName()) && !this.pl.utils.hasPerm(commandSender, "playerservers.template." + this.pl.templateManager.getTemplateSetting(templateFile, "template-name"))) {
@@ -547,7 +533,7 @@ public class ServerManager
             File[] listFiles = file.listFiles();
             if (listFiles != null) {
                 for (File file3 : listFiles) {
-                    this.doCopy(file3, new File(file2, file3.getName()));
+                    this.doCopy(file3, new File(file2.toPath() + File.separator + file3.getName()));
                 }
             }
             else {
@@ -635,7 +621,7 @@ public class ServerManager
             this.serverMap.get(serverUUID).setSetting(setting, value);
             s4 = this.serverMap.get(serverUUID).getSetting(setting);
         }
-        this.saveServerMap();
+        this.serverMap.get(serverUUID).save();
         if (s4 == null || !s4.equals(value)) {
             ArrayList<String> list = new ArrayList<String>();
             list.add("server-name");

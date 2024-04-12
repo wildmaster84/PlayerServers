@@ -1,6 +1,13 @@
 package net.cakemine.playerservers.velocity.objects;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -8,35 +15,45 @@ import net.cakemine.playerservers.velocity.PlayerServers;
 
 public class PlayerServer {
 	PlayerServers pl = PlayerServers.getApi().getInstance();
+	HashMap<String, HashMap<String, HashMap<String, String>>> serverStore;
 	HashMap<String, String> customSettings;
 	HashMap<String, String> settings;
 	HashMap<String, HashMap<String, String>> map;
+	File file;
 	final UUID uuid;
 	public PlayerServer(UUID serverUUID) {
 		customSettings = new HashMap<>();
 		settings = new HashMap<>();
 		map = new HashMap<>();
 		uuid = serverUUID;
+		serverStore = new HashMap<>();
+		file = new File(this.pl.getDataFolder() + File.separator + "data" + File.separator + "servers" + File.separator + uuid.toString() + ".yml");
+		try {
+			if (!file.exists()) {
+				Files.createFile(file.toPath());
+				Files.write(file.toPath(), String.format("%s: {}", uuid.toString()).getBytes());
+	        }
+			InputStream inputStream2 = new FileInputStream(this.pl.getDataFolder().getPath() + File.separator + "data" + File.separator + "servers" + File.separator + uuid.toString() + ".yml");
+			this.pl.utils.debug("serverDir = " + file.toPath());
+			serverStore = this.pl.yaml.load(new InputStreamReader(inputStream2, "UTF-8"));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		loadServer();
 		
 	}
 	
 	private void loadServer() {
 		String serverUUID = uuid.toString();
-        File file = new File(this.pl.getDataFolder() + File.separator + "servers");
-        this.pl.utils.debug("serverDir = " + file.toString());
-        if (!file.exists()) {
-            file.mkdir();
-        }
-        if (this.pl.serverStore.get("servers") != null && this.pl.serverStore.get("servers").get(serverUUID) != null) {
-        	if (this.pl.serverStore.get("servers").get(serverUUID).get("custom") != null) {
-        		this.pl.serverStore.get("servers").get(serverUUID).get("custom").keySet().forEach(custom -> {
-        			customSettings.put(custom, this.pl.serverStore.get("servers").get(serverUUID).get("custom").get(custom));
+        if (serverStore.get(serverUUID) != null) {
+        	if (serverStore.get(serverUUID).get("custom") != null) {
+        		serverStore.get(serverUUID).get("custom").keySet().forEach(custom -> {
+        			customSettings.put(custom, serverStore.get(serverUUID).get("custom").get(custom));
         		});
         	}
-        	if (this.pl.serverStore.get("servers").get(serverUUID).get("settings") != null) {
-        		this.pl.serverStore.get("servers").get(serverUUID).get("settings").keySet().forEach(setting -> {
-        			settings.put(setting, this.pl.serverStore.get("servers").get(serverUUID).get("settings").get(setting));
+        	if (serverStore.get(serverUUID).get("settings") != null) {
+        		serverStore.get(serverUUID).get("settings").keySet().forEach(perms -> {
+        			settings.put(perms, serverStore.get(serverUUID).get("settings").get(perms));
         		});
         	}
         	map.put("settings", settings);
@@ -96,5 +113,10 @@ public class PlayerServer {
 	
 	public String getMotd() {
 		return settings.get("server-motd");
+	}
+	
+	public void save() {
+		serverStore.put(uuid.toString(), map);
+		this.pl.saveConfig(serverStore, "data" + File.separator + "servers" + File.separator + uuid.toString() + ".yml");
 	}
 }
