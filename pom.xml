@@ -5,8 +5,11 @@
   <version>2.0.1-b4</version>
   <packaging>jar</packaging>
   <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
+    <java.version>17</java.version>
+    <maven.compiler.source>${java.version}</maven.compiler.source>
+    <maven.compiler.target>${java.version}</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+</properties>
     
   <repositories>
     <!-- This adds the Spigot Maven repository to the build -->
