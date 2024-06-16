@@ -36,13 +36,9 @@ public class PlayerServer implements CommandExecutor {
             }
         }
         else {
-            String string;
-            if (commandSender instanceof Player) {
-                string = ((Player)commandSender).getUniqueId().toString();
-            }
-            else {
-                string = "console";
-            }
+            String string = (commandSender instanceof Player ? ((Player)commandSender).getUniqueId().toString() : "console");
+            
+            
             String lowerCase = array[0].toLowerCase();
             switch (lowerCase) {
                 case "j":

@@ -58,18 +58,18 @@ public class Listeners implements Listener
     public void onJoin(PostLoginEvent postLoginEvent) {
         ProxiedPlayer player = postLoginEvent.getPlayer();
         if (player != null) {
-            String string = player.getUniqueId().toString();
+            String serverUUID = player.getUniqueId().toString();
             if (!this.pl.playerMap.containsKey(player.getUniqueId())) {
             	// Maybe save after loading?
                 this.pl.loadPlayer(player.getUniqueId(), new StoredPlayer(player.getUniqueId()));
             }
-            if (this.pl.serverManager.hasServer(player.getUniqueId().toString()) && !this.pl.serverManager.getServerInfo(string, "player-name").equals(player.getName())) {
+            if (this.pl.serverManager.hasServer(player.getUniqueId().toString()) && !this.pl.serverManager.getServerInfo(serverUUID, "player-name").equals(player.getName())) {
                 this.pl.utils.log(player.getName() + " has changed their name. Updating their server.");
-                if (this.pl.utils.getSrvName(string).equals(this.pl.serverManager.getServerInfo(string, "player-name"))) {
-                    this.pl.serverManager.setServerInfo(string, "server-name", player.getName());
+                if (this.pl.utils.getSrvName(serverUUID).equals(this.pl.serverManager.getServerInfo(serverUUID, "player-name"))) {
+                    this.pl.serverManager.setServerInfo(serverUUID, "server-name", player.getName());
                     this.pl.utils.log(player.getName() + "'s server name was the same as their old name, updating server name too.");
                 }
-                this.pl.serverManager.setServerInfo(string, "player-name", player.getName());
+                this.pl.serverManager.setServerInfo(serverUUID, "player-name", player.getName());
             }
         }
     }

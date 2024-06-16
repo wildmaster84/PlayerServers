@@ -102,7 +102,6 @@ public class PlayerServerCMD extends Command
         }
         else {
             ProxiedPlayer proxiedPlayer = (ProxiedPlayer)commandSender;
-            proxiedPlayer.getUniqueId().toString();
             String lowerCase = array[0].toLowerCase();
             switch (lowerCase) {
                 case "j":
