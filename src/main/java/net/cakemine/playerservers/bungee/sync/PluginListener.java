@@ -4,6 +4,7 @@ import net.md_5.bungee.api.plugin.*;
 import net.cakemine.playerservers.bungee.*;
 import net.md_5.bungee.api.event.*;
 import java.util.logging.*;
+import java.util.zip.GZIPInputStream;
 import java.util.*;
 import java.io.*;
 import net.md_5.bungee.api.connection.*;
@@ -38,7 +39,7 @@ public class PluginListener implements Listener
     @EventHandler
     public void onPluginMessage(PluginMessageEvent pluginMessageEvent) {
         if (pluginMessageEvent.getTag().equals("playerservers:core")) {
-            DataInputStream dataInputStream = new DataInputStream(new ByteArrayInputStream(pluginMessageEvent.getData()));
+            DataInputStream dataInputStream = new DataInputStream(new ByteArrayInputStream(Base64.getDecoder().decode(pluginMessageEvent.getData())));
             try {
                 String utf = dataInputStream.readUTF();
                 this.pl.utils.debug("Received " + utf + " plugin message");
@@ -302,4 +303,5 @@ public class PluginListener implements Listener
             }
         }
     }
+    
 }

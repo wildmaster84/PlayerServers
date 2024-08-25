@@ -115,7 +115,7 @@ public class SettingsManager
                 break;
             }
         }
-        Bukkit.setDefaultGameMode(defaultGameMode);
+        Bukkit.getServer().setDefaultGameMode(defaultGameMode);
     }
     
     public void setDifficulty(int n) {

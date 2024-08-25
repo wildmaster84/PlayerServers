@@ -888,7 +888,7 @@ public class PlayerServerAdmin implements SimpleCommand {
                 writer.write(string4 + property);
                 writer.write(string3 + property);
                 writer.write(string + property);
-                writer.write(string2 + " " + pl.vers + property);
+                writer.write(string2 + " " + pl.version + property);
                 writer.write("Bungee Online Mode: " + pl.proxy.getConfiguration().isOnlineMode() + property);
                 writer.write("External Proxy Address: " + pl.proxyAddress + property + property);
                 writer.write("Proxy Listeners:" + property);

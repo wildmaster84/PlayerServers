@@ -12,10 +12,10 @@ import java.nio.file.*;
 public class TemplateManager
 {
     PlayerServers pl;
-    public LinkedHashMap<File, Configuration> templates;
+    public HashMap<File, Configuration> templates;
     
     public TemplateManager(PlayerServers pl) {
-        this.templates = new LinkedHashMap<File, Configuration>();
+        this.templates = new HashMap<File, Configuration>();
         this.pl = pl;
     }
     
@@ -25,11 +25,11 @@ public class TemplateManager
             this.defaultTemplate();
         }
         if (file.isDirectory()) {
-            for (File file3 : file.listFiles()) {
-                this.templates.put(file3, this.loadTemplateConfig(file3));
-                this.updateConfig(file3);
-                this.linkPS(file3.getName());
-                this.pl.utils.log("Loaded template: " + this.pl.templateManager.getTemplateSetting(file3, "template-name"));
+            for (File templateFolder : file.listFiles()) {
+                this.templates.put(templateFolder, this.loadTemplateConfig(templateFolder));
+                this.updateConfig(templateFolder);
+                this.linkPS(templateFolder.getName());
+                this.pl.utils.log("Loaded template: " + this.pl.templateManager.getTemplateSetting(templateFolder, "template-name"));
             }
         }
     }

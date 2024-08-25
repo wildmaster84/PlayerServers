@@ -3,12 +3,11 @@ package net.cakemine.playerservers.velocity;
 import java.io.*;
 import java.net.*;
 import java.util.logging.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.yaml.snakeyaml.Yaml;
 
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
-import com.typesafe.config.ConfigFactory;
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
@@ -18,12 +17,14 @@ import com.velocitypowered.api.proxy.server.ServerInfo;
 import java.util.concurrent.*;
 import java.nio.file.attribute.*;
 import java.nio.file.*;
+
+import net.cakemine.playerservers.velocity.objects.PlayerServer.Status;
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.cakemine.playerservers.velocity.events.*;
 import net.cakemine.playerservers.velocity.objects.PlayerServer;
-import net.kyori.adventure.pointer.Pointered;
 
 import java.util.*;
-import java.util.Map.Entry;
 
 public class ServerManager
 {
@@ -45,108 +46,145 @@ public class ServerManager
         this.pl = pl;
     }
     
-    public void startupSrv(String s, CommandSource commandSender) {
-    	if (!pl.running.contains(s)) {
-    		pl.running.add(s);
-	        String srvName = this.pl.utils.getSrvName(s);	        
-	        String serversFolder = this.pl.serversFolder;
-	        String s2 = this.pl.templateManager.getTemplateSetting(this.pl.templateManager.getTemplateFile(this.pl.serverManager.getServerTemplateName(srvName)), "default-Xmx");
-	        String s3 = this.pl.templateManager.getTemplateSetting(this.pl.templateManager.getTemplateFile(this.pl.serverManager.getServerTemplateName(srvName)), "default-Xms");
-	        if (this.pl.serverManager.getServerInfo(s, "memory") != null && !this.pl.serverManager.getServerInfo(s, "memory").isEmpty()) {
-	            s2 = this.pl.serverManager.getServerInfo(s, "memory").split("\\/")[0];
-	            s3 = this.pl.serverManager.getServerInfo(s, "memory").split("\\/")[1];
-	        }
-	        ServerStartEvent serverStartEvent = new ServerStartEvent(this.pl, null, UUID.fromString(s), this.pl.utils.memStringToInt(s2), this.pl.utils.memStringToInt(s3));
-	        this.pl.eventManager.fire(serverStartEvent);
-	        
-	        if (serverStartEvent.getResult().isAllowed()) {
-	            serverStartEvent.setServerInfo(new ServerInfo(srvName, new InetSocketAddress(this.pl.utils.getSrvIp(s), this.pl.utils.getSrvPort(s))));
-	            if (!this.serverFilesExist(s)) {
-	                if (commandSender != null && commandSender instanceof Player) {
-	                    if (((Player)commandSender).getUniqueId().toString().equals(s)) {
-	                        if (this.pl.useTitles) {
-	                            this.pl.utils.sendTitle((Player)commandSender, this.pl.utils.doPlaceholders(s, this.pl.msgMap.get("no-server-title")));
-	                        }
-	                        else {
-	                            this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(s, this.pl.msgMap.get("no-server")));
-	                        }
-	                    }
-	                    else {
-	                        this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(s, this.pl.msgMap.get("other-no-server")));
-	                    }
-	                }
-	                this.pl.utils.debug(this.pl.utils.getName(s) + " Server files don't exist on startup. Could be normal, ex: Server was deleted.");
-	                pl.running.remove(s);
-	                return;
-	            }
-	            if (this.getJar(s) == null) {
-	                this.pl.utils.log(Level.SEVERE, "Failed to start server (" + s + "). JAR file not found.");
-	                pl.running.remove(s);
-	                return;
-	            }
-	            this.pl.utils.debug("startupSrv called for " + s);
-	            this.verifySettings(s);
-	            if (this.pl.serverManager.serverMap.get(s).getSetting("memory") != null && !this.pl.serverManager.serverMap.get(s).getSetting("memory").toString().isEmpty()) {
-	                s2 = this.pl.serverManager.serverMap.get(s).getSetting("memory").toString().split("\\/")[0];
-	                s3 = this.pl.serverManager.serverMap.get(s).getSetting("memory").toString().split("\\/")[1];
-	                if (!s2.matches("[0-9]+[MmGg][Bb]?")) {
-	                    s2 += "M";
-	                }
-	                if (!s3.matches("[0-9]+[MmGg][Bb]?")) {
-	                    s3 += "M";
-	                }
-	            }
-	            if (this.pl.wrapper.equalsIgnoreCase("screen")) {
-	                String[] array;
-	                if (new File(this.pl.getDataFolder().getAbsolutePath() + File.separator + "scripts" + File.separator + "start-screen.sh").exists()) {
-	                    array = new String[] { "sh", this.pl.getDataFolder().getAbsolutePath() + File.separator + "scripts" + File.separator + "start-screen.sh", s, this.pl.utils.getSrvName(s), serversFolder, s2, s3, this.getJar(s) };
-	                }
-	                else if (!this.getJar(s).matches("^(?i)spigot.*\\.jar")) {
-	                    array = new String[] { "screen", "-dmS", this.pl.utils.getSrvName(s), "java", "-Xmx" + s2, "-Xms" + s3, "-jar", this.getJar(s) };
-	                }
-	                else {
-	                    array = new String[] { "screen", "-dmS", this.pl.utils.getSrvName(s), "java", "-Xmx" + s2, "-Xms" + s3, "-Dcom.mojang.eula.agree=true", "-jar", this.getJar(s) };
-	                }
-	                String[] array2 = array;
-	                this.pl.utils.debug("Startup command to run: " + Arrays.toString(array2));
-	                this.proxy.getScheduler()
-	                .buildTask(this.pl, () -> {
-	                	ProcessBuilder processBuilder = new ProcessBuilder(new String[0]);
-                        processBuilder.command(array2);
-                        processBuilder.directory(new File(serversFolder + File.separator + s));
-                        try {
-                            processBuilder.start();
-                        }
-                        catch (IOException ex) {
-                            ex.printStackTrace();
-                        }
-	                })
-	                .delay(2L, TimeUnit.SECONDS)
-	                .schedule();
-	            }
-	            else if (!this.pl.wrapper.equalsIgnoreCase("tmux")) {
-	                if (this.pl.wrapper.equalsIgnoreCase("remote") || this.pl.wrapper.equalsIgnoreCase("default")) {
-	                    StringBuilder sb = new StringBuilder();
-	                    sb.append("+start ");
-	                    sb.append(this.pl.utils.getSrvName(s)).append(" ");
-	                    sb.append(serversFolder).append(File.separator).append(s).append(" ");
-	                    sb.append(s2).append(" ");
-	                    sb.append(s3).append(" ");
-	                    sb.append(this.getJar(s));
-	                    this.pl.ctrl.send(sb.toString());
-	                }
-	            }
-	            this.pl.utils.log("Started player server for uuid " + s);
-	            this.pl.serverManager.addVelocity(srvName, this.pl.utils.getSrvIp(s), this.pl.utils.getSrvPort(s), this.pl.serverManager.getServerInfo(s, "motd"), 3);
-	        }
-    	} else {
-    		this.pl.utils.log("Server already running for uuid " + s);
-    	}
+    public void startupSrv(String serverUUID, CommandSource CommandSource) {
+    	if (pl.serverManager.serverMap.get(serverUUID.toString()).getStatus() == Status.STOPPED) {
+        	pl.serverManager.serverMap.get(serverUUID.toString()).setStatus(Status.STARTING);
+
+            String srvName = pl.utils.getSrvName(serverUUID);
+            String serversFolder = pl.serversFolder + File.separator + serverUUID;
+            String startMem = getMemorySetting(serverUUID, "default-Xmx").split("/")[0];
+            String maxMem = getMemorySetting(serverUUID, "default-Xms").split("/")[1];
+
+            ServerStartEvent serverStartEvent = new ServerStartEvent(pl, null, UUID.fromString(serverUUID),
+                    pl.utils.memStringToInt(startMem), pl.utils.memStringToInt(maxMem));
+            this.pl.eventManager.fire(serverStartEvent);
+
+            if (!serverStartEvent.getResult().isAllowed()) {
+                startServer(serverUUID, srvName, serversFolder, startMem, maxMem, CommandSource);
+            }
+        } else {
+            pl.utils.log("Server already running for uuid " + serverUUID);
+        }
+    }
+
+    private void startServer(String serverUUID, String srvName, String serversFolder, String startMem, String maxMem, CommandSource CommandSource) {
+        ServerInfo serverInfo = createServerInfo(serverUUID, srvName);
+        if (serverFilesExist(serverUUID)) {
+            if (getJar(serverUUID) == null) {
+                pl.utils.log(Level.SEVERE, "Failed to start server (" + serverUUID + "). JAR file not found.");
+                pl.serverManager.serverMap.get(serverUUID.toString()).setStatus(Status.STOPPED);
+            } else {
+                executeServerStart(serverUUID, serversFolder, String.valueOf(serverInfo.getAddress().getPort()), pl.utils.getSrvMaxPlayers(serverUUID), startMem, maxMem, srvName, serverInfo, CommandSource);
+            }
+        } else {
+            notifyMissingServerFiles(serverUUID, CommandSource);
+        }
+    }
+
+    private ServerInfo createServerInfo(String serverUUID, String srvName) {
+        return new ServerInfo(srvName, new InetSocketAddress(this.pl.utils.getSrvIp(serverUUID), this.pl.utils.getSrvPort(serverUUID)));
+    }
+
+    private void executeServerStart(String serverUUID, String serversFolder, String port, String maxPlayers, String startMem, String maxMem, String srvName, ServerInfo serverInfo, CommandSource CommandSource) {
+        String[] command = buildStartupCommand(serverUUID, serversFolder, port, maxPlayers, startMem, maxMem);
+        this.proxy.getScheduler()
+        .buildTask(this.pl, () -> {
+        	if (pl.wrapper.equalsIgnoreCase("screen") || pl.wrapper.equalsIgnoreCase("tmux")) {
+        		try {
+                	ProcessBuilder processBuilder = new ProcessBuilder(new String[0]);
+                	processBuilder.command(command);
+                	processBuilder.directory(new File(serversFolder));
+                	processBuilder.start();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+        	} else {
+        		StringBuilder sb = new StringBuilder();
+        		sb.append("+start ")
+                .append(pl.utils.getSrvName(serverUUID)).append(" ")
+                .append(serversFolder).append(File.separator).append(" ")
+                .append(port).append(" ")
+                .append(maxPlayers).append(" ")
+                .append(startMem).append(" ")
+                .append(maxMem).append(" ").append(getJar(serverUUID));
+                pl.ctrl.send(sb.toString());
+        	}
+        });
+        pl.utils.log("Started player server for uuid " + serverUUID);
+        addVelocity(srvName, pl.utils.getSrvIp(serverUUID), pl.utils.getSrvPort(serverUUID), getServerInfo(serverUUID, "motd"), 3);
+        this.proxy.getScheduler().buildTask(this.pl, () -> {
+        	Executors.newSingleThreadExecutor().submit(() -> {
+        	    Pattern pattern = Pattern.compile("Done \\(\\d+\\.\\d+s\\)! For help, type \"help\"");
+        	    boolean isRunning = true;
+        	    try {
+        	        while (isRunning) {
+        	            BufferedReader reader = pl.serverManager.serverMap.get(serverUUID.toString()).getServerLog(); // Get the current log reader
+        	            String line;
+
+        	            // Read lines if available
+        	            while ((line = reader.readLine()) != null) {
+        	                Matcher running = pattern.matcher(line);
+        	                if (running.find()) {
+        	                    pl.serverManager.serverMap.get(serverUUID.toString()).setStatus(Status.RUNNING);
+        	                    Player owner = proxy.getPlayer(srvName).get();
+        	                    if (owner != null) {
+        	                        pl.utils.sendMsg(owner, ChatColor.YELLOW + "Connecting to '" + srvName + "', please wait..");
+        	                        this.pl.utils.movePlayer(owner, srvName, this.pl.joinDelay);
+        	                    }
+        	                    isRunning = false;
+        	                    break;
+        	                }
+        	            }
+        	            
+        	            if (isRunning) {
+        	            	try {
+            	                Thread.sleep(15000); // Wait 500 milliseconds before trying again
+            	            } catch (InterruptedException e) {
+            	                Thread.currentThread().interrupt();
+            	                break;
+            	            }
+        	            }
+
+        	        }
+        	    } catch (IOException e) {
+        	        e.printStackTrace();
+        	        pl.serverManager.serverMap.get(serverUUID.toString()).setStatus(Status.STOPPED);
+        	    }
+        	});
+        });
+    }
+
+    private String[] buildStartupCommand(String serverUUID, String serversFolder, String port, String maxPlayers, String startMem, String maxMem) {
+        String jarFile = getJar(serverUUID);
+        return new File(pl.getDataFolder().getAbsolutePath() + File.separator + "scripts" + File.separator + "start-screen.sh").exists() ?
+                new String[]{"sh", pl.getDataFolder().getAbsolutePath() + File.separator + "scripts" + File.separator + "start-screen.sh", serverUUID, pl.utils.getSrvName(serverUUID), serversFolder, startMem, maxMem, jarFile} :
+                new String[]{"screen", "-dmS", pl.utils.getSrvName(serverUUID), "java", "-Xmx" + startMem, "-Xms" + maxMem, "-jar", jarFile};
+    }
+
+
+    private void notifyMissingServerFiles(String serverUUID, CommandSource CommandSource) {
+        if (CommandSource != null) {
+            if (CommandSource instanceof Player && ((Player) CommandSource).getUniqueId().toString().equals(serverUUID)) {
+                pl.utils.sendTitle((Player) CommandSource, pl.utils.doPlaceholders(serverUUID, pl.msgMap.get("no-server-title")));
+            } else {
+                pl.utils.sendMsg(CommandSource, pl.utils.doPlaceholders(serverUUID, pl.msgMap.get("other-no-server")));
+            }
+        }
+        pl.utils.debug(pl.utils.getName(serverUUID) + " Server files don't exist on startup. Could be normal, ex: Server was deleted.");
+        pl.serverManager.serverMap.get(serverUUID.toString()).setStatus(Status.STOPPED);
+    }
+
+    private String getMemorySetting(String serverUUID, String defaultKey) {
+        String memorySetting = pl.templateManager.getTemplateSetting(pl.templateManager.getTemplateFile(getServerTemplateName(pl.utils.getSrvName(serverUUID))), defaultKey);
+        if (getServerInfo(serverUUID, "memory") != null && !getServerInfo(serverUUID, "memory").isEmpty()) {
+            memorySetting = getServerInfo(serverUUID, "memory");
+        }
+        return memorySetting;
     }
     
     public void stopSrv(String s) {
-    	if (pl.running.contains(s)) {
-    		pl.running.remove(s);
+    	if (pl.serverManager.serverMap.get(s).getStatus() == Status.RUNNING) {
+    		pl.serverManager.serverMap.get(s).setStatus(Status.STOPPING);
 	        String srvName = this.pl.utils.getSrvName(s);
 	        ServerInfo constructServerInfo = new ServerInfo(srvName, new InetSocketAddress(this.pl.utils.getSrvIp(s), this.pl.utils.getSrvPort(s)));
 	        ServerStopEvent serverStopEvent = new ServerStopEvent(this.pl, constructServerInfo, UUID.fromString(s), PlayerServers.getApi().getServerXmx(srvName), PlayerServers.getApi().getServerXms(srvName));
@@ -159,6 +197,7 @@ public class ServerManager
 	            this.proxy.getScheduler()
 	            .buildTask(this.pl, () -> {
 	            	wrapperStop(s);
+	            	pl.serverManager.serverMap.get(s).setStatus(Status.STOPPED);
                     pl.serverManager.removeVelocity(srvName);
 	            })
 	            .delay(1000L, TimeUnit.MILLISECONDS)
@@ -182,8 +221,9 @@ public class ServerManager
                     this.pl.utils.movePlayer((Player) iterator2.next(), this.pl.fallbackSrv, 0);
                 }
                 this.wrapperStop(ownerId);
+                pl.serverManager.serverMap.get(ownerId.toString()).setStatus(Status.STOPPED);
                 if (this.serverExists(s)) {
-                    ServerRemoveEvent serverRemoveEvent = new ServerRemoveEvent(this.pl, this.pl.proxy.getServer(s).get().getServerInfo(), UUID.fromString(ownerId), PlayerServers.getApi().getServerXms(s), PlayerServers.getApi().getServerXms(s));
+                    ServerRemoveEvent serverRemoveEvent = new ServerRemoveEvent(this.pl, this.pl.proxy.getServer(s).get().getServerInfo(), UUID.fromString(ownerId), PlayerServers.getApi().getServerXmx(s), PlayerServers.getApi().getServerXms(s));
                     this.pl.eventManager.fire(serverRemoveEvent);
                     if (serverRemoveEvent.getResult().isAllowed()) {
                         this.pl.utils.log("&eRemoved server " + s + " from velocity servers.");
@@ -207,7 +247,6 @@ public class ServerManager
             }
         }
         this.playerServers.removeAll(list);
-        pl.running.clear();
     }
     
     public void wrapperStop(String s) {
@@ -259,6 +298,9 @@ public class ServerManager
                 this.pl.ctrl.send("+kill " + this.pl.utils.getSrvName(s));
             }
         }
+        
+        pl.serverManager.serverMap.get(s).setStatus(Status.STOPPED);
+        
         this.removeVelocity(this.pl.utils.getSrvName(s));
     }
     
@@ -308,7 +350,6 @@ public class ServerManager
             this.pl.utils.log(Level.WARNING, "&cTried to remove server \"" + s + "\" but it doesn't exist!");
             return false;
         }
-        this.pl.running.remove(s);
         ServerRemoveEvent serverRemoveEvent;
         if (this.isPlayerServer(s)) {
             serverRemoveEvent = new ServerRemoveEvent(this.pl, this.pl.proxy.getServer(s).get().getServerInfo(), UUID.fromString(this.pl.utils.getServerUUID(s)), PlayerServers.getApi().getServerXms(s), PlayerServers.getApi().getServerXms(s));
@@ -333,11 +374,11 @@ public class ServerManager
         return false;
     }
     
-    public boolean createServer(Player proxiedPlayer, File file) {
-        return this.createServer((CommandSource)proxiedPlayer, proxiedPlayer.getUsername(), proxiedPlayer.getUniqueId().toString(), file);
+    public boolean createServer(Player Player, File file) {
+        return this.createServer((CommandSource)Player, Player.getUsername(), Player.getUniqueId().toString(), file);
     }
     
-    public boolean createServer(CommandSource sender, String serverName, String s2, File templateFile) {
+    public boolean createServer(CommandSource sender, String s, String s2, File templateFile) {
     	Player commandSender = (Player) sender;
         if (!this.pl.templateManager.templateDone()) {
             if (commandSender != null) {
@@ -345,7 +386,7 @@ public class ServerManager
             }
             return false;
         }
-        ServerCreateEvent serverCreateEvent = new ServerCreateEvent(this.pl, UUID.fromString(s2), serverName, this.pl.utils.getNextPort(), this.pl.utils.memStringToInt(this.pl.templateManager.getTemplateSetting(templateFile, "default-Xmx")), this.pl.utils.memStringToInt(this.pl.templateManager.getTemplateSetting(templateFile, "default-Xms")), this.pl.templateManager.getTemplateSetting(templateFile, "template-name"));
+        ServerCreateEvent serverCreateEvent = new ServerCreateEvent(this.pl, UUID.fromString(s2), s, this.pl.utils.getNextPort(), this.pl.utils.memStringToInt(this.pl.templateManager.getTemplateSetting(templateFile, "default-Xmx")), this.pl.utils.memStringToInt(this.pl.templateManager.getTemplateSetting(templateFile, "default-Xms")), this.pl.templateManager.getTemplateSetting(templateFile, "template-name"));
         this.pl.eventManager.fire(serverCreateEvent).thenAccept((event) -> {});
         if (!serverCreateEvent.getResult().isAllowed()) {
             return false;
@@ -357,8 +398,6 @@ public class ServerManager
             }
             return false;
         }
-        this.serverMap.put(commandSender.getUniqueId().toString(), new PlayerServer(commandSender.getUniqueId()));
-        
         this.pl.utils.debug("templateFolder was: " + templateFile.getName() + " | getTemplate returns: " + serverCreateEvent.getTemplate());
         templateFile = this.pl.templateManager.getTemplateFile(serverCreateEvent.getTemplate());
         if (commandSender != null && !this.pl.utils.hasPerm(commandSender, "playerservers.templates.*") && !this.pl.utils.hasPerm(commandSender, "playerservers.templates.all") && this.pl.utils.hasPerm(commandSender, "playerservers.templates." + templateFile.getName()) && (this.pl.utils.hasPerm(commandSender, "playerservers.templates." + this.pl.templateManager.getTemplateSetting(templateFile, "template-name")) || this.pl.utils.hasPerm(commandSender, "playerservers.template.*") || this.pl.utils.hasPerm(commandSender, "playerservers.template.all")) && this.pl.utils.hasPerm(commandSender, "playerservers.template." + templateFile.getName()) && !this.pl.utils.hasPerm(commandSender, "playerservers.template." + this.pl.templateManager.getTemplateSetting(templateFile, "template-name"))) {
@@ -371,20 +410,21 @@ public class ServerManager
             }
             return false;
         }
-        if (this.copyTemplate(s2, serverName, String.valueOf(this.pl.utils.getNextPort()), templateFile)) {
+        if (this.copyTemplate(s2, s, String.valueOf(this.pl.utils.getNextPort()), templateFile)) {
             if (commandSender != null) {
                 this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(s2, this.pl.msgMap.get("create-copying-files")).replaceAll("%template-name%", this.pl.templateManager.getTemplateSetting(templateFile, "template-name")));
             }
-            this.setServerInfo(s2, "player-name", serverName);
-            this.setServerInfo(s2, "server-name", serverName);
+            pl.serverManager.serverMap.get(s2).setStatus(Status.INSTALLING);
+            this.setServerInfo(s2, "player-name", s);
+            this.setServerInfo(s2, "server-name", s);
             this.setServerInfo(s2, "server-ip", this.pl.settingsManager.getSetting(s2, "server-ip"));
             this.setServerInfo(s2, "port", String.valueOf(this.pl.utils.getNextPort()));
             this.setServerInfo(s2, "max-players", this.pl.settingsManager.getSetting(s2, "max-players"));
             this.setServerInfo(s2, "motd", this.pl.settingsManager.getSetting(s2, "motd"));
             this.setServerInfo(s2, "white-list", this.pl.settingsManager.getSetting(s2, "white-list"));
             this.pl.utils.iteratePort();
-            this.setServerInfo(s2, "memory", this.pl.templateManager.getTemplateSetting(templateFile, "default-Xmx") + "/" + this.pl.templateManager.getTemplateSetting(templateFile, "default-Xmx"));
-            if (this.pl.resetExpiry || (this.serverMap.containsKey(s2) && this.serverMap.get(s2).getSetting("expire-date") == null || this.serverMap.get(s2).getSetting("expire-date").toString().isEmpty())) {
+            this.setServerInfo(s2, "memory", this.pl.templateManager.getTemplateSetting(templateFile, "default-Xms") + "/" + this.pl.templateManager.getTemplateSetting(templateFile, "default-Xmx"));
+            if (this.pl.resetExpiry || (this.serverMap.containsKey(s2) && (this.serverMap.get(s2).getSetting("expire-date") == null || this.serverMap.get(s2).getSetting("expire-date").isEmpty()))) {
                 this.setServerInfo(s2, "expire-date", "1989-04-20 16:20");
                 this.pl.expiryTracker.addTime(s2, this.pl.templateManager.expireTime(templateFile), this.pl.templateManager.expireUnit(templateFile));
             }
@@ -398,7 +438,7 @@ public class ServerManager
                     this.pl.utils.log("Server created by " + commandSender.getUsername());
                 }
             }
-            ServerCreateFinishEvent finished = new ServerCreateFinishEvent(this.pl, UUID.fromString(s2), serverName, this.pl.utils.getNextPort(), this.pl.utils.memStringToInt(this.pl.templateManager.getTemplateSetting(templateFile, "default-Xmx")), this.pl.utils.memStringToInt(this.pl.templateManager.getTemplateSetting(templateFile, "default-Xms")), this.pl.templateManager.getTemplateSetting(templateFile, "template-name"));
+            ServerCreateFinishEvent finished = new ServerCreateFinishEvent(this.pl, UUID.fromString(s2), s, this.pl.utils.getNextPort(), this.pl.utils.memStringToInt(this.pl.templateManager.getTemplateSetting(templateFile, "default-Xmx")), this.pl.utils.memStringToInt(this.pl.templateManager.getTemplateSetting(templateFile, "default-Xms")), this.pl.templateManager.getTemplateSetting(templateFile, "template-name"));
             this.pl.eventManager.fire(finished);
             return true;
         }
@@ -408,7 +448,7 @@ public class ServerManager
         return false;
     }
     
-    public void deleteServer(CommandSource commandSender, String s) {
+    public void deleteServer(CommandSource CommandSource, String s) {
         String srvName = this.pl.utils.getSrvName(s);
         ServerDeleteEvent serverDeleteEvent = new ServerDeleteEvent(this.pl, UUID.fromString(s), srvName, this.pl.utils.getSrvPort(s), PlayerServers.getApi().getServerXmx(srvName), PlayerServers.getApi().getServerXms(srvName));
         this.pl.eventManager.fire(serverDeleteEvent);
@@ -435,23 +475,25 @@ public class ServerManager
                             pl.utils.log(Level.WARNING, "RAWWWR you woke me from my slumber!");
                         }
                     }
-                    if (commandSender != null) {
-                        pl.utils.sendMsg(commandSender, pl.utils.doPlaceholders(s, pl.utils.doPlaceholders(s, pl.msgMap.get("start-delete"))));
+                    if (CommandSource != null) {
+                        pl.utils.sendMsg(CommandSource, pl.utils.doPlaceholders(s, pl.utils.doPlaceholders(s, pl.msgMap.get("start-delete"))));
                     }
                     boolean doDelete = doDelete(getServerFolder(s));
-                    if (commandSender != null) {
+                    if (CommandSource != null) {
                         if (!doDelete) {
-                            pl.utils.sendMsg(commandSender, pl.utils.doPlaceholders(s, pl.msgMap.get("finish-delete-problem")));
+                            pl.utils.sendMsg(CommandSource, pl.utils.doPlaceholders(s, pl.msgMap.get("finish-delete-problem")));
                         }
                         else {
-                            pl.utils.sendMsg(commandSender, pl.utils.doPlaceholders(s, pl.msgMap.get("finish-delete")));
+                        	//serverMap.remove(s);
+                        	//saveServerMap();
+                            pl.utils.sendMsg(CommandSource, pl.utils.doPlaceholders(s, pl.msgMap.get("finish-delete")));
                         }
                     }
                 })
                 .delay(2L, TimeUnit.SECONDS)
                 .schedule();
             }
-            else if (commandSender != null) {}
+            else if (CommandSource != null) {}
         }
     }
     
@@ -489,8 +531,8 @@ public class ServerManager
         return s2;
     }
     
-    public boolean copyTemplate(String s, String s2, String s3, File file) {
-        File serverFolder = this.getServerFolder(s);
+    public boolean copyTemplate(String serverUUID, String serverName, String serverPort, File file) {
+        File serverFolder = this.getServerFolder(serverUUID);
         if (!file.exists()) {
             return false;
         }
@@ -498,9 +540,9 @@ public class ServerManager
             @Override
             public Boolean call() {
                 doCopy(file, serverFolder);
-                pl.settingsManager.changeSetting(s, "server-name", s2);
-                pl.settingsManager.changeSetting(s, "server-port", s3);
-                //pl.settingsManager.changeSetting(s, "motd", doMotdPlaceholders(s, file, pl.settingsManager.getSetting(s, "motd")));
+                pl.settingsManager.changeSetting(serverUUID, "server-name", serverName);
+                pl.settingsManager.changeSetting(serverUUID, "server-port", serverPort);
+                pl.settingsManager.changeSetting(serverUUID, "motd", doMotdPlaceholders(serverUUID, file, pl.settingsManager.getSetting(serverUUID, "motd")));
                 return true;
             }
         });
@@ -533,7 +575,7 @@ public class ServerManager
             File[] listFiles = file.listFiles();
             if (listFiles != null) {
                 for (File file3 : listFiles) {
-                    this.doCopy(file3, new File(file2.toPath() + File.separator + file3.getName()));
+                    this.doCopy(file3, new File(file2, file3.getName()));
                 }
             }
             else {
@@ -611,29 +653,29 @@ public class ServerManager
         return null;
     }
     
-    public void setServerInfo(String serverUUID, String setting, String value) {
+    public void setServerInfo(String s, String s2, String s3) {
         String s4 = null;
-        if (!this.serverMap.containsKey(serverUUID)) {
-        	this.serverMap.put(serverUUID, new PlayerServer(UUID.fromString(serverUUID)));
-            this.serverMap.get(serverUUID).setSetting(setting, value);
+        if (!this.serverMap.containsKey(s)) {
+        	this.serverMap.put(s, new PlayerServer(UUID.fromString(s), this.pl));
+            this.serverMap.get(s).setSetting(s2, s3);
         }
         else {
-            this.serverMap.get(serverUUID).setSetting(setting, value);
-            s4 = this.serverMap.get(serverUUID).getSetting(setting);
+            this.serverMap.get(s).setSetting(s2, s3);
+            s4 = this.serverMap.get(s).getSetting(s2);
         }
-        this.serverMap.get(serverUUID).save();
-        if (s4 == null || !s4.equals(value)) {
+        this.serverMap.get(s).save();
+        if (s4 == null || !s4.equals(s3)) {
             ArrayList<String> list = new ArrayList<String>();
             list.add("server-name");
             list.add("server-ip");
             list.add("max-players");
             list.add("motd");
             list.add("white-list");
-            if (list.contains(setting.toLowerCase())) {
-                this.pl.utils.debug("Updating server.properties " + setting + " setting to: " + value);
-                this.pl.settingsManager.changeSetting(serverUUID, setting, value);
+            if (list.contains(s2.toLowerCase())) {
+                this.pl.utils.debug("Updating server.properties " + s2 + " setting to: " + s3);
+                this.pl.settingsManager.changeSetting(s, s2, s3);
             }
-            ServerModifyEvent serverModifyEvent = new ServerModifyEvent(this.pl, serverUUID);
+            ServerModifyEvent serverModifyEvent = new ServerModifyEvent(this.pl, s);
             this.pl.eventManager.fire(serverModifyEvent);
         }
     }
@@ -647,12 +689,11 @@ public class ServerManager
     }
     
     public boolean serverExists(String s) {
-    	if (this.proxy.getServer(s).isEmpty()) return false;
-    	return this.proxy.getAllServers().contains(this.proxy.getServer(s).get());
+        return this.proxy.getAllServers().contains(this.proxy.getServer(s).get());
     }
     
     public boolean isPlayerServer(String s) {
-        for (Entry<String, PlayerServer> entry : this.pl.serverManager.serverMap.entrySet()) {
+        for (Map.Entry<String, PlayerServer> entry : this.pl.serverManager.serverMap.entrySet()) {
             if (entry.getValue().getSetting("server-name") != null && entry.getValue().getSetting("server-name").equals(s)) {
                 return true;
             }
@@ -661,29 +702,36 @@ public class ServerManager
     }
     
     public String getOwnerId(String s) {
-        for (Entry<String, PlayerServer> entry : this.serverMap.entrySet()) {
-        	if (entry.getValue().getSetting("server-name") != null && entry.getValue().getSetting("server-name").equals(s)) {
-        		return entry.getKey();
-        	}
-        }
-        return null;
+    	for (Map.Entry<String, PlayerServer> entry : this.serverMap.entrySet()) {
+    		HashMap<String, String> hashMap = entry.getValue().getAllSettings();
+    		if (hashMap != null && hashMap.get("server-name") != null && hashMap.get("server-name").equals(s)) {
+                return entry.getKey();
+            }
+    		
+    	}
+    	return null;
     }
     
     public String getServerTemplateName(String s) {
         String ownerId = this.getOwnerId(s);
         if (ownerId != null && this.serverMap.containsKey(ownerId)) {
+            File file = new File(this.pl.serversFolder + File.separator + ownerId + File.separator + "PlayerServers.yml");
+            if (!file.exists()) {
+                return null;
+            }
             try {
-    			InputStream inputStream5 = new FileInputStream(this.pl.serversFolder + File.separator + ownerId + File.separator + "PlayerServers.yml");
+            	InputStream inputStream5 = new FileInputStream(this.pl.serversFolder + File.separator + ownerId + File.separator + "PlayerServers.yml");
     			Map<String, Object> templateFile = new Yaml().load(new InputStreamReader(inputStream5, "UTF-8"));
     			String string = templateFile.get("template-name").toString();
     			if (string.isEmpty()) {
     			    return null;
     			}
     			return string;
-    		} catch (FileNotFoundException | UnsupportedEncodingException e) {
-    			e.printStackTrace();
-    			return null;
-    		}
+            }
+            catch (IOException ex) {
+                this.pl.utils.log(Level.SEVERE, "Failed to load PlayerServers.yml file for " + ownerId);
+                ex.printStackTrace();
+            }
         }
         return null;
     }
@@ -728,7 +776,7 @@ public class ServerManager
             if (((setting4 = this.pl.settingsManager.getSetting(s, "max-players")) != null && this.pl.serverManager.getServerInfo(s, "max-players") == null) || (this.pl.serverManager.getServerInfo(s, "max-players") != null && this.pl.serverManager.getServerInfo(s, "max-players").equalsIgnoreCase("null")) || (this.pl.serverManager.getServerInfo(s, "max-players") != null && !this.pl.serverManager.getServerInfo(s, "max-players").equalsIgnoreCase(setting4))) {
                 if (setting4 == null || !setting4.matches("[0-9]+")) {
                     this.pl.utils.log(Level.WARNING, s + "'s max players wasn't a number! Defaulted to 2!");
-                    this.pl.serverManager.setServerInfo(s, "max-players", "2");
+                    this.pl.serverManager.setServerInfo(s, "max-players", "10");
                 }
                 else {
                     this.pl.serverManager.setServerInfo(s, "max-players", setting4);
@@ -779,7 +827,7 @@ public class ServerManager
                 String s = entry.getKey();
                 Player player = this.pl.proxy.getPlayer(UUID.fromString(s)).get();
                 String s2 = entry.getValue();
-                String s3 = this.pl.serverManager.serverMap.get(s2).getSetting("memory").toString().split("\\/")[0];
+                String s3 = this.pl.serverManager.serverMap.get(s2).getSetting("memory").split("\\/")[0];
                 if (this.pl.globalMaxRam > 0 && this.pl.serverManager.allocatedRam + this.pl.utils.memStringToInt(s3) > this.pl.globalMaxRam) {
                     return;
                 }
@@ -793,9 +841,8 @@ public class ServerManager
                     this.pl.utils.sendMsg(player, this.pl.utils.doPlaceholders(s2, this.pl.msgMap.get("queue-startup")));
                 }
                 if (this.pl.utils.isPortOpen(this.pl.utils.getSrvIp(s2), this.pl.utils.getSrvPort(s2))) {
-                    this.pl.serverManager.startupSrv(s2, player);
+                    this.pl.serverManager.startupSrv(player.getUniqueId().toString(), (CommandSource)player);
                     this.pl.playerServer.startCooldown(s);
-                    this.pl.utils.movePlayer(player, this.pl.utils.getSrvName(s2), this.pl.joinDelay);
                 }
                 else {
                     this.pl.utils.movePlayer(player, this.pl.utils.getSrvName(s2), this.pl.onlineJoinDelay);

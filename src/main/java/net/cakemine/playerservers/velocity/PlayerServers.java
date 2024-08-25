@@ -1,27 +1,27 @@
 package net.cakemine.playerservers.velocity;
 
-import net.cakemine.playerservers.velocity.objects.PlayerServer;
 import net.cakemine.playerservers.velocity.objects.StoredPlayer;
-import net.cakemine.playerservers.velocity.commands.*;
+import net.cakemine.playerservers.velocity.commands.PlayerServerAdmin;
+import net.cakemine.playerservers.velocity.commands.PlayerServerCMD;
 import net.cakemine.playerservers.velocity.wrapper.*;
 import net.cakemine.playerservers.velocity.sync.*;
 
 import java.io.*;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.*;
-import java.util.logging.*;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
-import com.google.common.io.*;
+import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
-
 import com.velocitypowered.api.event.EventManager;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
-import com.velocitypowered.api.plugin.*;
+import com.velocitypowered.api.plugin.PluginContainer;
+import com.velocitypowered.api.plugin.PluginDescription;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
-import com.velocitypowered.api.proxy.*;
-import com.velocitypowered.api.proxy.config.ProxyConfig;
+import com.velocitypowered.api.proxy.Player;
+import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.scheduler.ScheduledTask;
@@ -32,9 +32,9 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 public class PlayerServers {
+
     public ProxyServer proxy;
-    private PlayerServers pl;
-    public List<String> running = new ArrayList<>();
+    private PlayerServers instance;
     public ServerManager serverManager;
     public ExpiryTracker expiryTracker;
     public SettingsManager settingsManager;
@@ -45,6 +45,7 @@ public class PlayerServers {
     protected static PlayerServersAPI api;
     public Utils utils;
     public Yaml yaml;
+
     protected HashMap<String, Object> config;
     protected HashMap<String, HashMap<String, String>> messages;
     protected HashMap<String, Object> guis;
@@ -54,6 +55,7 @@ public class PlayerServers {
     public List<String> alwaysOP;
     public HashMap<String, String> msgMap;
     public HashMap<UUID, StoredPlayer> playerMap;
+
     public String prefix;
     public String fallbackSrv;
     public String serversFolder;
@@ -76,23 +78,24 @@ public class PlayerServers {
     public int onlineJoinDelay;
     public int globalMaxServers;
     public int globalMaxRam;
-    private RepeatTasks repeatTask; 
+
+    private RepeatTasks repeatTask;
     public HashMap<String, String> defaultMem;
     public String psCommand;
-    public String vers;
+    public String version;
     public String wrapper;
     public HashMap<Player, RegisteredServer> usingHelper;
     protected Controller ctrl;
-	private Path dataDirectory;
-	public static Logger logger;
-	@Inject
+    private Path dataDirectory;
+    public static Logger logger;
+    @Inject
     private PluginContainer container;
-	public EventManager eventManager;
-	
-	@Inject
+    public EventManager eventManager;
+
+    @Inject
     public PlayerServers(ProxyServer server, Logger proxyLogger, @DataDirectory Path dataDirectory, EventManager eventManager) {
         this.proxy = server;
-        this.pl = this;
+        this.instance = this;
         this.eventManager = eventManager;
         logger = proxyLogger;
         this.dataDirectory = dataDirectory;
@@ -102,11 +105,16 @@ public class PlayerServers {
         this.templateManager = new TemplateManager(this);
         this.playerServerAdmin = new PlayerServerAdmin(this);
         this.sender = new PluginSender(this);
-        this.playerServer = null;
         this.utils = new Utils(this);
-        this.permMap = new HashMap<String, HashMap<String, String>>();
-        this.msgMap = new HashMap<String, String>();
-        this.playerMap = new HashMap<UUID, StoredPlayer>();
+
+        // Initialize collections
+        this.permMap = new HashMap<>();
+        this.msgMap = new HashMap<>();
+        this.playerMap = new HashMap<>();
+        this.defaultMem = new HashMap<>();
+        this.usingHelper = new HashMap<>();
+        
+        // Set default values
         this.debug = true;
         this.useExpiry = true;
         this.resetExpiry = false;
@@ -122,321 +130,262 @@ public class PlayerServers {
         this.onlineJoinDelay = 3;
         this.globalMaxServers = -1;
         this.globalMaxRam = -1;
-        this.defaultMem = new HashMap<String, String>();
         this.psCommand = "playerserver";
-        this.vers = "-1";
+        this.version = "-1";
         this.wrapper = "default";
-        this.usingHelper = new HashMap<Player, RegisteredServer>();
         this.ctrl = null;
     }
-    
-	@Subscribe
-    public void onProxyInitialize(ProxyInitializeEvent event) {
-		DumperOptions options = new DumperOptions();
-        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
-        options.setAllowUnicode(true);
-		this.yaml = new Yaml(options);
-        this.vers = container.getDescription().getVersion().get();
-        this.usingWindows = this.usingWindows();
-        this.proxyAddress = this.utils.getProxyIp();
-        this.proxy.getChannelRegistrar().register(MinecraftChannelIdentifier.from("playerservers:core"));
-        this.proxy.getChannelRegistrar().register(MinecraftChannelIdentifier.from("bungeecord:proxy"));
 
-        this.proxy.getEventManager().register(this, new Listeners(this));
-        this.proxy.getEventManager().register(this, new PluginListener(this));
+    @Subscribe
+    public void onProxyInitialize(ProxyInitializeEvent event) {
+        initializeYaml();
+        this.version = container.getDescription().getVersion().get();
+        this.usingWindows = usingWindows();
+        this.proxyAddress = this.utils.getProxyIp();
+        
+        proxy.getChannelRegistrar().register(MinecraftChannelIdentifier.from("playerservers:core"));
+        proxy.getChannelRegistrar().register(MinecraftChannelIdentifier.from("bungeecord:proxy"));
+        
+        eventManager.register(this, new Listeners(this));
+        eventManager.register(this, new PluginListener(this));
+
         PlayerServers.api = new PlayerServersAPI(this);
-        this.reload();
-        this.setupScripts();
+
+        reload();
+        setupScripts();
+
         this.playerServer = new PlayerServerCMD(this, this.psCommand);
         repeatTask = new RepeatTasks(this);
-        this.pl.proxy.getScheduler().buildTask(this.pl, () -> {
-        	repeatTask.run();
-        }).delay(30L, TimeUnit.SECONDS).repeat(30L, TimeUnit.SECONDS).schedule();
-        this.proxy.getCommandManager().register(this.psCommand, new PlayerServerCMD(this, this.psCommand), "pserver", "psrv", "ps");
-    	this.proxy.getCommandManager().register("playerserveradmin", new PlayerServerAdmin(this), "pserveradmin", "psrvadmin", "psa");
 
-        this.loadOnlineServers();
+        proxy.getScheduler().buildTask(this, () -> repeatTask.run())
+                .delay(30L, TimeUnit.SECONDS)
+                .repeat(30L, TimeUnit.SECONDS)
+                .schedule();
+
+        proxy.getCommandManager().register(this.psCommand, new PlayerServerCMD(this, this.psCommand), "pserver", "psrv", "ps");
+        proxy.getCommandManager().register("playerserveradmin", new PlayerServerAdmin(this), "pserveradmin", "psrvadmin", "psa");
+
     }
-    
+
     public void onDisable() {
-        if (this.wrapper.equalsIgnoreCase("default")) {
-            this.ctrl.disconnect();
+        if ("default".equalsIgnoreCase(wrapper)) {
+            ctrl.disconnect();
         }
-        Iterator<ScheduledTask> tasks = this.proxy.getScheduler().tasksByPlugin(pl).iterator();
-    	while (tasks.hasNext()) {
-    		tasks.next().cancel();
-    	}
+        proxy.getScheduler().tasksByPlugin(instance).forEach(ScheduledTask::cancel);
     }
-    
+
+    private void initializeYaml() {
+        DumperOptions options = new DumperOptions();
+        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+        options.setAllowUnicode(true);
+        this.yaml = new Yaml(options);
+    }
+
     public boolean usingWindows() {
-        return System.getProperty("os.name").matches("(?i)(.*)(windows)(.*)");
+        return System.getProperty("os.name").toLowerCase().contains("windows");
     }
-    
+
     public void reload() {
-        String psCommand = this.psCommand;
-        this.msgMap.clear();
-        this.serverManager.serverMap.clear();
-        this.templateManager.templates.clear();
-        this.loadFiles();
-        this.updateConfig();
-        this.loadConfig();
-        this.vers = "565421"; // Don't modify this!
-        this.loadMsgs();
-        this.loadGUIs();
-        this.templateManager.loadTemplates();
-        this.utils.vCheck();
-        this.sender.reSyncAll();
-        if (!this.psCommand.equalsIgnoreCase(psCommand)) {
-        	this.proxy.getCommandManager().unregister(psCommand);
-        	this.proxy.getCommandManager().unregister("playerserveradmin");
-        	this.proxy.getCommandManager().register(this.psCommand, new PlayerServerCMD(this, this.psCommand), "pserver", "psrv", "ps");
-        	this.proxy.getCommandManager().register("playerserveradmin", new PlayerServerAdmin(this), "pserveradmin", "psrvadmin", "psa");
+        String previousPsCommand = this.psCommand;
+        resetData();
+        loadFiles();
+        updateConfig();
+        loadConfig();
+        clearOnlineServers();
+        this.version = "565421"; // Don't modify this!
+        loadMsgs();
+        loadGUIs();
+        templateManager.loadTemplates();
+        utils.vCheck();
+        sender.reSyncAll();
+        
+        if (!this.psCommand.equalsIgnoreCase(previousPsCommand)) {
+            proxy.getCommandManager().unregister(previousPsCommand);
+            proxy.getCommandManager().unregister("playerserveradmin");
+            proxy.getCommandManager().register(this.psCommand, new PlayerServerCMD(this, this.psCommand), "pserver", "psrv", "ps");
+            proxy.getCommandManager().register("playerserveradmin", new PlayerServerAdmin(this), "pserveradmin", "psrvadmin", "psa");
         }
-        if (this.ctrl == null && this.wrapper.equalsIgnoreCase("default")) {
-        	this.proxy.getScheduler().buildTask(this.pl, () -> {
-        		this.ctrl = new Controller(this);
-        		this.ctrl.connect();
-        	}).delay(3L, TimeUnit.SECONDS).schedule();
-        }
-        else if (this.ctrl == null && this.wrapper.equalsIgnoreCase("remote")) {
-        	this.proxy.getScheduler().buildTask(this.pl, () -> {
-        		this.ctrl = new Controller(this);
-        		this.ctrl.setAddress(this.wrapperAddress);
-        		this.ctrl.connect();
-        	}).delay(3L, TimeUnit.SECONDS).schedule();
-        }
-        this.onlineMode = this.proxy.getConfiguration().isOnlineMode();
+
+        handleControllerConnection();
+        this.onlineMode = proxy.getConfiguration().isOnlineMode();
     }
-    
+
+    private void resetData() {
+        msgMap.clear();
+        serverManager.serverMap.clear();
+        templateManager.templates.clear();
+    }
+
+    private void handleControllerConnection() {
+        if (ctrl == null) {
+            proxy.getScheduler().buildTask(instance, () -> {
+                ctrl = new Controller(this);
+                ctrl.setAddress(wrapperAddress);
+                ctrl.connect();
+            }).delay(3L, TimeUnit.SECONDS).schedule();
+        }
+    }
+
     public void loadFiles() {
-        if (!this.getDataFolder().exists()) {
-            this.getDataFolder().mkdir();
+        if (!getDataFolder().exists()) {
+            getDataFolder().mkdir();
         }
-        File config = new File(this.getDataFolder(), "config.yml");
-        File messages = new File(this.getDataFolder(), "messages.yml");
-        File guis = new File(this.getDataFolder(), "guis.yml");
-        if (!config.exists()) this.copyResource(config);
-        if (!messages.exists()) this.copyResource(messages);
-        if (!guis.exists()) this.copyResource(guis);
-        
-        File serverFolder = new File(this.getDataFolder() + File.separator + "data" + File.separator + "servers");
-        this.utils.debug("serverDir = " + serverFolder.toString());
-        if (!serverFolder.exists()) {
-        	serverFolder.mkdirs();
-        }
-        
-        File playersFolder = new File(this.getDataFolder() + File.separator + "data" + File.separator + "players");
-        this.utils.debug("playerDir = " + playersFolder.toString());
-        if (!playersFolder.exists()) {
-        	playersFolder.mkdirs();
-        }
-        
-        File file = new File(this.getDataFolder() + File.separator + "servers");
-        this.utils.debug("serverDir = " + file.toString());
+
+        loadFile("config.yml");
+        loadFile("messages.yml");
+        loadFile("guis.yml");
+
+        createDirectory("data/servers");
+        createDirectory("data/players");
+        createDirectory("servers");
+
+        loadYamlFile("config.yml", config);
+        loadMsgYamlFile("messages.yml", messages);
+        loadYamlFile("guis.yml", guis);
+    }
+
+    private void loadFile(String fileName) {
+        File file = new File(getDataFolder(), fileName);
         if (!file.exists()) {
-            file.mkdir();
-        }
-        
-		try {
-			InputStream inputStream = new FileInputStream(this.getDataFolder().getPath() + File.separator + "config.yml");
-			this.config = yaml.load(new InputStreamReader(inputStream, "UTF-8"));
-		} catch (FileNotFoundException | UnsupportedEncodingException e) {
-			e.printStackTrace();
-		}        
-        
-		try {
-			InputStream inputStream3 = new FileInputStream(this.getDataFolder().getPath() + File.separator + "messages.yml");
-			this.messages = yaml.load(new InputStreamReader(inputStream3, "UTF-8"));
-		} catch (FileNotFoundException | UnsupportedEncodingException e) {
-			e.printStackTrace();
-		}
-        
-		try {
-			InputStream inputStream4 = new FileInputStream(this.getDataFolder().getPath() + File.separator + "guis.yml");
-			this.guis = yaml.load(new InputStreamReader(inputStream4, "UTF-8"));
-		} catch (FileNotFoundException | UnsupportedEncodingException e) {
-			e.printStackTrace();
-		}
-        
-    }
-    
-    public void updateConfig() {
-    	boolean changed = false;
-        if (this.config.get("blocked-commands") == null || ((List<String>)this.config.get("blocked-commands")).isEmpty()) {
-            this.config.put("blocked-commands", new String[] { "^(/execute(.*)|/)(minecraft:)(ban(-ip)?|pardon(-ip)?|stop|reload)($|\\s.*)?" });
-            this.utils.log("Added missing blocked-commands config option to the config.");
-            changed = true;
-        }
-        if (this.config.get("ps-custom-command") == null || this.config.get("ps-custom-command").toString().isEmpty()) {
-            this.config.put("ps-custom-command", "/playerserver");
-            this.utils.log("Added missing ps-custom-command config option to the config.");
-            changed = true;
-        }
-        if (this.config.get("global-max-RAM") == null) {
-            this.config.put("global-max-RAM", (-1));
-            this.utils.log("Added missing global-max-RAM config option to the config.");
-            changed = true;
-        }
-        if (this.config.get("global-max-servers") == null || (int)this.config.get("global-max-servers") < -1) {
-            this.config.put("global-max-servers", (-1));
-            this.utils.log("Added missing global-max-servers config option to the config.");
-            changed = true;
-        }
-        if (this.config.get("always-op") == null) {
-            this.config.put("always-op", Arrays.asList("Notch", "069a79f4-44e9-4726-a5be-fca90e38aaf5"));
-            this.utils.log("Added default always-op list to existing config.");
-            changed = true;
-        }
-        if (this.config.get("reset-expiry-on-create") == null) {
-            this.config.put("reset-expiry-on-create", false);
-            this.utils.log("Added default reset-expiry-on-create to existing config.");
-            changed = true;
-        }
-        if (this.config.get("use-titles") == null) {
-            this.config.put("use-titles", true);
-            this.utils.log("Added default use-titles to existing config.");
-            changed = true;
-        }
-        if (this.config.get("purge-servers") == null) {
-            this.config.put("purge-servers", false);
-            this.utils.log("Added default purge-servers to existing config.");
-            changed = true;
-        }
-        if (this.config.get("purge-after") == null) {
-            this.config.put("purge-after", "30 days");
-            this.utils.log("Added default purge-after to existing config.");
-            changed = true;
-        }
-        if (this.config.get("purge-interval") == null) {
-            this.config.put("purge-interval", "6 hours");
-            this.utils.log("Added default purge-interval to existing config.");
-            changed = true;
-        }
-        if (this.config.get("wrapper") == null) {
-            this.config.put("wrapper", "screen");
-            this.utils.log("Added screen as 'wrapper' to existing config.");
-            changed = true;
-        }
-        if (this.config.get("wrapper-control-address") == null) {
-            this.config.put("wrapper-control-address", "localhost");
-            this.utils.log("Added default wrapper-control-address to existing config.");
-            changed = true;
-        }
-        if (this.config.get("wrapper-control-port") == null) {
-            this.config.put("wrapper-control-port", 5155);
-            this.utils.log("Added default wrapper-control-port to existing config.");
-            changed = true;
-        }
-        if (this.config.get("online-join-delay") == null) {
-            this.config.put("online-join-delay", 3);
-            this.utils.log("Added default online-join-delay to existing config.");
-            changed = true;
-        }
-        if (this.config.get("use-startup-queue") == null) {
-            this.config.put("use-startup-queue", true);
-            this.utils.log("Added default use-startup-queue to existing config.");
-            changed = true;
-        }
-        if (changed) {
-        	this.saveConfig(this.config, "config.yml");
+            copyResource(file);
         }
     }
-    
-    public void saveConfig(Object config, String s) {
-    	File configFile = new File(this.getDataFolder(), s);
-    	try {
-            // Write configuration to file
-            try (FileWriter writer = new FileWriter(configFile)) {
-            	
-            	this.yaml.dump(config, writer);
-            }
+
+    private void createDirectory(String path) {
+        File dir = new File(getDataFolder() + File.separator + path);
+        utils.debug("Directory = " + dir.toString());
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+    }
+
+    private void loadYamlFile(String fileName, HashMap<String, Object> targetMap) {
+        try (InputStream inputStream = new FileInputStream(getDataFolder().getPath() + File.separator + fileName)) {
+            targetMap = yaml.load(new InputStreamReader(inputStream, "UTF-8"));
         } catch (IOException e) {
-            e.printStackTrace(); // Handle the exception properly in your application
+            e.printStackTrace();
         }
-    	   
     }
+    
+    private void loadMsgYamlFile(String fileName, HashMap<String, HashMap<String, String>> targetMap) {
+        try (InputStream inputStream = new FileInputStream(getDataFolder().getPath() + File.separator + fileName)) {
+            targetMap = yaml.load(new InputStreamReader(inputStream, "UTF-8"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void updateConfig() {
+        boolean changed = false;
+
+        changed |= updateConfigOption("blocked-commands", new String[]{"^(/execute(.*)|/)(minecraft:)(ban(-ip)?|pardon(-ip)?|stop|reload)($|\\s.*)?"});
+        changed |= updateConfigOption("ps-custom-command", "/playerserver");
+        changed |= updateConfigOption("global-max-RAM", -1);
+        changed |= updateConfigOption("global-max-servers", -1);
+        changed |= updateConfigOption("always-op", Arrays.asList("Notch", "069a79f4-44e9-4726-a5be-fca90e38aaf5"));
+        changed |= updateConfigOption("reset-expiry-on-create", false);
+        changed |= updateConfigOption("use-titles", true);
+        changed |= updateConfigOption("purge-servers", false);
+        changed |= updateConfigOption("purge-after", "30 days");
+        changed |= updateConfigOption("purge-interval", "6 hours");
+        changed |= updateConfigOption("wrapper", "screen");
+        changed |= updateConfigOption("wrapper-control-address", "localhost");
+        changed |= updateConfigOption("wrapper-control-port", 5155);
+        changed |= updateConfigOption("online-join-delay", 3);
+        changed |= updateConfigOption("use-startup-queue", true);
+
+        if (changed) {
+            saveConfig(config, "config.yml");
+        }
+    }
+
+    private boolean updateConfigOption(String key, Object defaultValue) {
+        if (!config.containsKey(key)) {
+            config.put(key, defaultValue);
+            utils.log("Added missing " + key + " config option to the config.");
+            return true;
+        }
+        return false;
+    }
+
+    public void saveConfig(Object config, String fileName) {
+        File configFile = new File(getDataFolder(), fileName);
+        try (FileWriter writer = new FileWriter(configFile)) {
+            yaml.dump(config, writer);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void loadConfig() {
-        this.debug = (boolean)this.config.get("debug");
-        this.psCommand = (String) this.config.get("ps-custom-command");
-        if (this.psCommand.startsWith("/")) {
-            this.psCommand = this.psCommand.substring(1);
+        debug = (boolean) config.get("debug");
+        psCommand = config.get("ps-custom-command").toString();
+        if (psCommand.startsWith("/")) {
+            psCommand = psCommand.substring(1);
         }
-        this.blockedCmds = (List)this.config.get("blocked-commands");
-        this.useExpiry = (boolean)this.config.get("use-expire-dates");
-        this.utils.debug("use-expire-dates: " + this.useExpiry);
-        this.prefix = this.config.get("prefix").toString();
-        this.utils.debug("prefix: " + this.prefix);
-        if (this.config.get("hub-server") == null || this.config.get("hub-server").equals("default")) {
-            ProxyServer proxy = this.proxy;
-            ProxyConfig configurationAdapter = this.proxy.getConfiguration();
-            String fallback = "default_server";
-            ProxyServer proxy2 = this.proxy;
-            this.fallbackSrv = configurationAdapter.getAttemptConnectionOrder().get(0);
-        }
-        else {
-            this.fallbackSrv = this.config.get("hub-server").toString();
-        }
-        this.utils.debug("hub-server: " + this.fallbackSrv);
-        if (this.config.get("servers-folder").equals("default")) {
-            this.serversFolder = this.getDataFolder().getAbsolutePath() + File.separator + "servers";
-        }
-        else {
-            this.serversFolder = this.config.get("servers-folder").toString();
-        }
-        this.utils.debug("servers-folder: " + this.serversFolder);
-        this.joinDelay = (int)this.config.get("startup-join-delay");
-        this.onlineJoinDelay = (int)this.config.get("online-join-delay");
-        this.utils.debug("config max servers = " + this.config.get("global-max-servers") + " | class =" + this.config.getClass());
-        this.globalMaxServers = (int)this.config.get("global-max-servers");
-        this.utils.debug("global-max-servers = " + this.globalMaxServers);
-        this.globalMaxRam = (int)this.config.get("global-max-RAM");
-        this.utils.debug("global-max-RAM = " + this.globalMaxRam);
-        this.alwaysOP = (List)this.config.get("always-op");
-        this.resetExpiry = (boolean)this.config.get("reset-expiry-on-create");
-        this.utils.debug("reset-expiry-on-create = " + this.resetExpiry);
-        this.useTitles = (boolean)this.config.get("use-titles");
-        this.utils.debug("use-titles = " + this.useTitles);
-        this.autoPurge = (boolean)this.config.get("purge-servers");
-        this.utils.debug("purge-servers = " + this.autoPurge);
-        this.autoPurgeTime = this.expiryTracker.stringToMillis(this.config.get("purge-after").toString());
-        this.utils.debug("purge-after in milliseconds = " + this.autoPurgeTime);
-        this.autoPurgeInterval = this.expiryTracker.stringToMillis(this.config.get("purge-interval").toString());
-        this.utils.debug("purge-interval in milliseconds = " + this.autoPurgeInterval);
-        this.wrapper = this.config.get("wrapper").toString();
-        if (this.wrapper.matches("(?i)(scr(e*)n)")) {
-            this.wrapper = "screen";
-        }
-        else if (this.wrapper.matches("(?i)(tm(u)?x)")) {
-            this.wrapper = "tmux";
-        }
-        else if (this.wrapper.matches("(?i)(r(e)?m(o)?t(e)?)")) {
-            this.wrapper = "remote";
-        }
-        else {
-            this.wrapper = "default";
-        }
-        this.utils.debug("wrapper = " + this.wrapper);
-        this.wrapperPort = (int)this.config.get("wrapper-control-port");
-        this.utils.debug("wrapper-control-port = " + this.wrapperPort);
-        this.wrapperAddress = (this.wrapper == "default") ? "127.0.0.1" : this.config.get("wrapper-control-address").toString();
-        this.utils.debug("wrapper-control-address = " + this.wrapperAddress);
-        this.useQueue = (boolean)this.config.get("use-startup-queue");
-        this.utils.debug("use-startup-queue = " + this.useQueue);
+        blockedCmds = (List<String>) config.get("blocked-commands");
+        useExpiry = (boolean) config.get("use-expire-dates");
+        prefix = config.get("prefix").toString();
+        
+        fallbackSrv = resolveFallbackServer();
+        serversFolder = resolveServersFolder();
+
+        joinDelay = (int) config.get("startup-join-delay");
+        onlineJoinDelay = (int) config.get("online-join-delay");
+        globalMaxServers = (int) config.get("global-max-servers");
+        globalMaxRam = (int) config.get("global-max-RAM");
+        alwaysOP = (List<String>) config.get("always-op");
+        resetExpiry = (boolean) config.get("reset-expiry-on-create");
+        useTitles = (boolean) config.get("use-titles");
+        autoPurge = (boolean) config.get("purge-servers");
+        autoPurgeTime = expiryTracker.stringToMillis(config.get("purge-after").toString());
+        autoPurgeInterval = expiryTracker.stringToMillis(config.get("purge-interval").toString());
+        wrapper = resolveWrapper(config.get("wrapper").toString());
+        wrapperPort = (int) config.get("wrapper-control-port");
+        wrapperAddress = (wrapper.equals("default")) ? "127.0.0.1" : config.get("wrapper-control-address").toString();
+        useQueue = (boolean) config.get("use-startup-queue");
     }
-    
+
+    private String resolveFallbackServer() {
+        if (config.get("hub-server") == null || config.get("hub-server").equals("default")) {
+            return proxy.getConfiguration().getAttemptConnectionOrder().get(0);
+        } else {
+            return config.get("hub-server").toString();
+        }
+    }
+
+    private String resolveServersFolder() {
+        if (config.get("servers-folder").equals("default")) {
+            return getDataFolder().getAbsolutePath() + File.separator + "servers";
+        } else {
+            return config.get("servers-folder").toString();
+        }
+    }
+
+    private String resolveWrapper(String wrapperValue) {
+        if (wrapperValue.matches("(?i)(scr(e*)n)")) {
+            return "screen";
+        } else if (wrapperValue.matches("(?i)(tm(u)?x)")) {
+            return "tmux";
+        } else if (wrapperValue.matches("(?i)(r(e)?m(o)?t(e)?)")) {
+            return "remote";
+        } else {
+            return "default";
+        }
+    }
+
     public void loadGUIs() {
-        this.updateGUIs();
+        updateGUIs();
         try {
-			InputStream inputStream4 = new FileInputStream(this.getDataFolder().getPath() + File.separator + "guis.yml");
-			Map<String, Object> yamlData = yaml.load(new InputStreamReader(inputStream4, "UTF-8"));
-	    	ObjectMapper jsonMapper = new ObjectMapper();
-	        String jsonData = jsonMapper.writeValueAsString(yamlData);
-	        this.sender.guisSerialized = jsonData.toString();
-		} catch (FileNotFoundException | JsonProcessingException | UnsupportedEncodingException e) {
-			this.sender.guisSerialized = null;
-		}
+            InputStream inputStream = new FileInputStream(getDataFolder().getPath() + File.separator + "guis.yml");
+            Map<String, Object> yamlData = yaml.load(new InputStreamReader(inputStream, "UTF-8"));
+            ObjectMapper jsonMapper = new ObjectMapper();
+            sender.guisSerialized = jsonMapper.writeValueAsString(yamlData);
+        } catch (FileNotFoundException | JsonProcessingException | UnsupportedEncodingException e) {
+            sender.guisSerialized = null;
+        }
     }
-    
+
     public void updateGUIs() {
         boolean changed = false;
         if (this.guis.get("settings-icons") instanceof HashMap && ((HashMap)this.guis.get("settings-icons")).get("expire-tracker") == null) {
@@ -502,13 +451,13 @@ public class PlayerServers {
         	changed = true;
         }
         if (changed) {
-            this.saveConfig(this.guis, "guis.yml");
-            this.utils.debug("Saved updated guis.yml file.");
+            saveConfig(guis, "guis.yml");
+            utils.debug("Saved updated guis.yml file.");
         }
     }
-    
+
     public void loadMsgs() {
-        this.utils.debug("messages class: " + this.messages.get("messages").getClass());
+    	this.utils.debug("messages class: " + this.messages.get("messages").getClass());
         this.msgMap.put("no-permissions",  this.messages.get("messages").get("no-permissions").toString());
         this.msgMap.put("no-server", this.messages.get("messages").get("no-server").toString());
         this.msgMap.put("other-no-server", this.messages.get("messages").get("other-no-server").toString());
@@ -680,9 +629,9 @@ public class PlayerServers {
         this.msgMap.put("help-mys-op", this.messages.get("messages").get("help-mys-op").toString());
         this.msgMap.put("help-mys-regain", this.messages.get("messages").get("help-mys-regain").toString());
         this.msgMap.put("help-mys-stop",  this.messages.get("messages").get("help-mys-stop").toString());
-        this.updateMsgs();
+        updateMsgs();
     }
-    
+
     public void updateMsgs() {
         HashMap<String, String> hashMap = new HashMap<String, String>();
         hashMap.put("max-memory-changed", "&a%server-owner%'s server maximum memory set to %max-mem%||&aThis will take effect on next restart.");
@@ -817,121 +766,75 @@ public class PlayerServers {
         if (this.msgMap.containsKey("recently-started") && this.msgMap.get("recently-started").equalsIgnoreCase("&cYou recently started or stopped your server, please wait a minute.")) {
             this.msgMap.put("recently-started", "&cYou recently started, stopped, or deleted your server, please wait a minute.");
         }
-        Iterator<Map.Entry<String, String>> iterator = this.msgMap.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, String> entry = iterator.next();
-            String s = entry.getKey();
-            String s2 = entry.getValue();
-            if (s2.contains("%server-owners%")) {
-                s2 = s2.replaceAll("%server-owners%", "%server-owner%");
-                iterator.remove();
-                hashMap.put(s, s2);
-                this.utils.debug(s + ": fixed %server-owner% typo.");
-            }
-            if (s2.matches("(?i)(.*)(%days-changed%)(\\sday(s)?)?(.*)")) {
-                s2 = s2.replaceAll("(?i)(%days-changed%)(\\sday(s)?)?", "%time-changed%");
-                iterator.remove();
-                hashMap.put(s, s2);
-                this.utils.debug(s + ": updated existing %days-changed% placeholders to %time-changed%.");
-            }
-            if (s2.matches("(?i)(.*)(%days-left%)(\\sday(s)?)?(.*)")) {
-                String replaceAll = s2.replaceAll("(?i)(%days-left%)(\\sday(s)?)?", "%time-left%");
-                iterator.remove();
-                hashMap.put(s, replaceAll);
-                this.utils.debug(s + ": updated existing %days-left% placeholders to %time-left%.");
-            }
-        }
-        boolean b = false;
-        if (hashMap.size() > 0) {
-            for (Map.Entry<String, String> entry2 : hashMap.entrySet()) {
-                if (!this.msgMap.containsKey(entry2.getKey().toString())) {
-                    this.msgMap.put(entry2.getKey(), entry2.getValue());
-                    this.utils.debug(entry2.getKey() + ": saved changes.");
-                    b = true;
-                }
-            }
-        }
-        if (b) {
-        	this.messages.put("messages", this.msgMap);
-            this.saveConfig(this.messages, "messages.yml");
-            this.utils.debug("Saved updated messages.yml file.");
+        
+        if (!hashMap.isEmpty()) {
+            messages.put("messages", msgMap);
+            saveConfig(messages, "messages.yml");
+            utils.debug("Saved updated messages.yml file.");
         }
     }
-    
-    public void loadOnlineServers() {
-        if (!this.getDataFolder().exists()) {
-            this.getDataFolder().mkdir();
+
+    public void clearOnlineServers() {
+        if (!getDataFolder().exists()) {
+            getDataFolder().mkdir();
         }
 
-        File online = new File(this.getDataFolder(), "online.yml");
-        if (!online.exists()) this.copyResource(online);
+        File onlineFile = new File(getDataFolder(), "online.yml");
+        if (!onlineFile.exists()) copyResource(onlineFile);
+
+        try (InputStream inputStream = new FileInputStream(getDataFolder().getPath() + File.separator + "online.yml")) {
+            online = yaml.load(new InputStreamReader(inputStream, "UTF-8"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         
-		try {
-			InputStream inputStream = new FileInputStream(this.getDataFolder().getPath() + File.separator + "online.yml");
-			this.online = yaml.load(new InputStreamReader(inputStream, "UTF-8"));
-		} catch (FileNotFoundException | UnsupportedEncodingException e) {
-			e.printStackTrace();
-		} 
-        
-        
-		this.online.get("servers").keySet().forEach(s -> {
-			if (this.serverManager.addedServers != null && !this.serverManager.addedServers.containsKey(s)) {
-				this.serverManager.addVelocity(s.toString(), ((HashMap) this.online.get("servers").get(s)).get("address").toString(), Integer.valueOf(((HashMap) this.online.get("servers").get(s)).get("port").toString()), ((HashMap) this.online.get("servers").get(s)).get("motd").toString(), 1);
-			}
-		});
+        online.put("servers", new HashMap<>());
+        saveConfig(online, "online.yml");
     }
-    
-    public void loadPlayer(UUID s, StoredPlayer s2) {
-        this.playerMap.put(s, s2);
-        this.playerMapChanged = true;
+
+    public void loadPlayer(UUID uuid, StoredPlayer player) {
+        playerMap.put(uuid, player);
+        playerMapChanged = true;
     }
-    
+
     public void copyResource(File file) {
-    	if (!file.exists()) {
-    		try {
-                try (InputStream resourceAsStream = PlayerServers.class.getClassLoader().getResourceAsStream(file.getName());
-                     FileOutputStream fileOutputStream = new FileOutputStream(file)) {
-                    ByteStreams.copy(resourceAsStream, fileOutputStream);
-                }
-            }
-            catch (IOException ex) {
-            	ex.printStackTrace();
-            }
-    	}
-    }
-
-	public void setupScripts() {
-    	//
-    	// Stop being a skript kiddie and code your own plugin >:c
-    	//
-        File file = new File(this.getDataFolder(), "scripts");
-        this.utils.debug("scriptsDir = " + file.toString());
         if (!file.exists()) {
-            file.mkdir();
+            try (InputStream resourceStream = PlayerServers.class.getClassLoader().getResourceAsStream(file.getName());
+                 FileOutputStream fileOutputStream = new FileOutputStream(file)) {
+                ByteStreams.copy(resourceStream, fileOutputStream);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
-        this.copyResource(new File(this.getDataFolder(), "scripts" + File.separator + "PSWrapper.jar"));
     }
-    
-    public File getDataFolder() {
-		Path dataFolder = Path.of(this.dataDirectory + File.separator);
-		return dataFolder.toFile();
-	}
 
-	public static PlayerServersAPI getApi() {
+    public void setupScripts() {
+        // Example script setup logic
+        File scriptDir = new File(getDataFolder(), "scripts");
+        utils.debug("scriptsDir = " + scriptDir);
+        if (!scriptDir.exists()) {
+            scriptDir.mkdir();
+        }
+        copyResource(new File(getDataFolder(), "scripts" + File.separator + "PSWrapper.jar"));
+    }
+
+    public File getDataFolder() {
+        return dataDirectory.toFile();
+    }
+
+    public static PlayerServersAPI getApi() {
         return PlayerServers.api;
     }
-    
+
     public PlayerServers getInstance() {
         return this;
     }
 
-	public PluginDescription getDescription() {
-		// TODO Auto-generated method stub
-		return this.container.getDescription();
-	}
+    public PluginDescription getDescription() {
+        return this.container.getDescription();
+    }
 
-	public Logger getLogger() {
-		// TODO Auto-generated method stub
-		return logger;
-	}
+    public Logger getLogger() {
+        return logger;
+    }
 }

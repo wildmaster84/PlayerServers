@@ -14,8 +14,6 @@ import org.bukkit.*;
 
 public class PlayerServers extends JavaPlugin {
     PlayerServers pl;
-    protected FileConfiguration config;
-    protected File configFile;
     protected FileConfiguration psrvCfg;
     protected File psrv;
     private static PlayerServersAPI api;
@@ -47,8 +45,7 @@ public class PlayerServers extends JavaPlugin {
     public PlayerServer psCmd;
     
     public PlayerServers() {
-        this.config = (FileConfiguration)new YamlConfiguration();
-        this.configFile = null;
+    	
         this.psrvCfg = (FileConfiguration)new YamlConfiguration();
         this.psrv = null;
         this.utils = new Utils(this);
@@ -88,13 +85,11 @@ public class PlayerServers extends JavaPlugin {
         this.checkSlave();
         if (this.isSlave()) {
             this.pl.utils.log("Server is a PlayerServer!");
-            this.checkConfig();
             this.loadPsrv();
             this.checkUseless();
             this.getCommand("myserver").setExecutor(new MyServer(this));
             this.defaultMessages();
             this.checkSettings();
-            this.pl.listener.loadCmds();
         }
         else {
             this.pl.utils.log("Server is not a PlayerServer!");
@@ -165,41 +160,21 @@ public class PlayerServers extends JavaPlugin {
         return boolean1;
     }
     
-    public void checkConfig() {
-        this.configFile = new File(this.getDataFolder(), "serverconfig.yml");
-        this.config = (FileConfiguration)YamlConfiguration.loadConfiguration(this.configFile);
-        if (!this.configFile.exists()) {
-            try {
-                InputStreamReader inputStreamReader = new InputStreamReader(this.getResource("serverconfig.yml"), "UTF8");
-                this.config.setDefaults((Configuration)YamlConfiguration.loadConfiguration((Reader)inputStreamReader));
-                this.saveConfig(this.config, this.configFile);
-                inputStreamReader.close();
-            }
-            catch (UnsupportedEncodingException ex) {
-                this.pl.utils.log(Level.SEVERE, "&cFailed to load default config! Please send the following stack trace to the developer.");
-                ex.printStackTrace();
-            }
-            catch (IOException ex2) {
-                ex2.printStackTrace();
-            }
-        }
-    }
-    
     public void checkSettings() {
         File file = new File("bukkit.yml");
-        boolean b = false;
+        boolean changed = false;
         if (file.exists()) {
             YamlConfiguration loadConfiguration = YamlConfiguration.loadConfiguration(file);
             if (((FileConfiguration)loadConfiguration).getInt("settings.connection-throttle") > 0) {
                 ((FileConfiguration)loadConfiguration).set("settings.connection-throttle", -1);
                 try {
-                    ((FileConfiguration)loadConfiguration).save(file);
+                    loadConfiguration.save(file);
+                    this.pl.utils.log(Level.WARNING, "Bukkit.yml connection-throttle must be set to -1 when using BungeeCord, fixed it automatically.");
+                    changed = true;
                 }
                 catch (IOException ex) {
                     ex.printStackTrace();
                 }
-                this.pl.utils.log(Level.WARNING, "Bukkit.yml connection-throttle must be set to -1 when using BungeeCord, fixed it automatically.");
-                b = true;
             }
         }
         File paperConfig = new File("config/paper-global.yml");
@@ -218,33 +193,31 @@ public class PlayerServers extends JavaPlugin {
 	            if (!loadConfiguration2.getBoolean("settings.bungeecord")) {
 	                loadConfiguration2.set("settings.bungeecord", true);
 	                try {
-	                    ((FileConfiguration)loadConfiguration2).save(file2);
+	                    loadConfiguration2.save(file2);
+	                    this.pl.utils.log(Level.WARNING, "Spigot.yml bungeecord setting must be set to TRUE! Fixed it automatically.");
+		                changed = true;
 	                }
 	                catch (IOException ex2) {
 	                    ex2.printStackTrace();
 	                }
-	                this.pl.utils.log(Level.WARNING, "Spigot.yml bungeecord setting must be set to TRUE! Fixed it automatically.");
-	                b = true;
 	            }
             } else {
             	if (loadConfiguration2.getBoolean("settings.bungeecord")) {
 	                loadConfiguration2.set("settings.bungeecord", false);
 	                try {
-	                    ((FileConfiguration)loadConfiguration2).save(file2);
+	                    loadConfiguration2.save(file2);
+	                    this.pl.utils.log(Level.WARNING, "Spigot.yml bungeecord setting must be set to TRUE! Fixed it automatically.");
+		                changed = true;
 	                }
 	                catch (IOException ex2) {
 	                    ex2.printStackTrace();
 	                }
-	                this.pl.utils.log(Level.WARNING, "Spigot.yml bungeecord setting must be set to TRUE! Fixed it automatically.");
-	                b = true;
 	            }
             }
         }
-        if (b) {
-            Scheduler.runTaskLater(this.pl, () -> {
-            	PlayerServers.this.pl.utils.log(Level.WARNING, "spigot.yml and/or bukkit.yml settings fixed on start, reloading now.");
-            	if (!Scheduler.isFolia()) Bukkit.reload();
-            }, 200L);
+        if (changed) {
+        	
+            this.pl.utils.log(Level.WARNING, "spigot.yml and/or bukkit.yml settings fixed on start, restart for the changes to take effect!");
         }
     }
     

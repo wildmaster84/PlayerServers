@@ -1,7 +1,7 @@
 {
 "id":"playerservers",
 "name":"PlayerServers",
-"version":"2.0.1-b4",
+"version":"2.1.0",
 "description":"give your players their own server",
 "url":"https://discord.gg/JmxAGSdcuR",
 "authors":["wildmaster84"],

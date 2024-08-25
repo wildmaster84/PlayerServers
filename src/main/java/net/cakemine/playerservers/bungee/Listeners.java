@@ -61,7 +61,7 @@ public class Listeners implements Listener
             String serverUUID = player.getUniqueId().toString();
             if (!this.pl.playerMap.containsKey(player.getUniqueId())) {
             	// Maybe save after loading?
-                this.pl.loadPlayer(player.getUniqueId(), new StoredPlayer(player.getUniqueId()));
+                this.pl.loadPlayer(player.getUniqueId(), new StoredPlayer(player.getUniqueId(), this.pl));
             }
             if (this.pl.serverManager.hasServer(player.getUniqueId().toString()) && !this.pl.serverManager.getServerInfo(serverUUID, "player-name").equals(player.getName())) {
                 this.pl.utils.log(player.getName() + " has changed their name. Updating their server.");

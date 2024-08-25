@@ -1,5 +1,6 @@
 package net.cakemine.playerservers.velocity;
 
+import net.cakemine.playerservers.velocity.objects.PlayerServer.Status;
 import net.cakemine.playerservers.velocity.commands.*;
 import net.kyori.adventure.pointer.Pointered;
 
@@ -41,7 +42,7 @@ public class RepeatTasks implements Runnable
                     if (!this.pl.utils.isPortOpen(this.pl.utils.getSrvIp(ownerId), port) || ownerId == null || PlayerServerCMD.chill.contains(ownerId) || n <= 90000L) {
                         continue;
                     }
-                    this.pl.running.remove(ownerId);
+                    pl.serverManager.serverMap.get(ownerId.toString()).setStatus(Status.STOPPED);
                     list.add(string);
                 }
             }

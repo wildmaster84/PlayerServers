@@ -1,12 +1,17 @@
 package net.cakemine.playerservers.velocity;
 
+import net.cakemine.playerservers.velocity.ServerManager;
 import net.cakemine.playerservers.velocity.events.*;
 import net.cakemine.playerservers.velocity.objects.PlayerServer;
 import net.cakemine.playerservers.velocity.objects.StoredPlayer;
 import net.cakemine.playerservers.velocity.wrapper.Controller;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.logging.Level;
 
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 
@@ -26,6 +31,18 @@ public class PlayerServersAPI {
     
     public void debugLog(String message) {
         this.pl.utils.debug(message);
+    }
+    
+    public void debugLog(Object plugin, String s) {
+        this.pl.utils.debug(s);
+    }
+    
+    public void log(String s) {
+        this.pl.utils.log(s);
+    }
+    
+    public void log(Level level, String s) {
+        this.pl.utils.log(level, s);
     }
     
     public String getPluginPrefix() {
@@ -50,6 +67,10 @@ public class PlayerServersAPI {
     
     public String getServerMapSetting(String serverName, String setting) {
         return this.pl.serverManager.serverMap.get(serverName).getSetting(setting);
+    }
+    
+    public ServerManager getServerManager() {
+    	return this.pl.serverManager;
     }
     
     public void setServerMapSetting(String serverName, String setting, String value) {
@@ -94,14 +115,14 @@ public class PlayerServersAPI {
         if (this.pl.serverManager.getOwnerId(serverName) == null) {
             return 0;
         }
-        return this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(this.pl.serverManager.getOwnerId(serverName)).getSetting("memory").toString().split("\\/")[0]);
+        return this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(this.pl.serverManager.getOwnerId(serverName)).getSetting("memory").toString().split("\\/")[1]);
     }
     
     public int getServerXms(String serverName) {
         if (this.pl.serverManager.getOwnerId(serverName) == null) {
             return 0;
         }
-        return this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(this.pl.serverManager.getOwnerId(serverName)).getSetting("memory").toString().split("\\/")[1]);
+        return this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(this.pl.serverManager.getOwnerId(serverName)).getSetting("memory").toString().split("\\/")[0]);
     }
     
     public String getPlayerServerName(UUID uuid) {
@@ -152,11 +173,11 @@ public class PlayerServersAPI {
         this.pl.serverManager.stopAll(null);
     }
     
-    public void addBungeeServer(String serverName, String address, Integer port, String motd, int timer) {
+    public void addVelocityServer(String serverName, String address, Integer port, String motd, int timer) {
         this.pl.serverManager.addVelocity(serverName, address, port, motd, timer);
     }
     
-    public void removeBungeeServer(String serverName) {
+    public void removeVelocityServer(String serverName) {
         this.pl.serverManager.removeVelocity(serverName);
     }
     
@@ -286,7 +307,7 @@ public class PlayerServersAPI {
     }
     
     public void putPlayerMapEntry(String playerName, UUID uuid) {
-        this.pl.loadPlayer(uuid, new StoredPlayer(uuid));
+        this.pl.loadPlayer(uuid, new StoredPlayer(uuid, this.pl));
     }
     
     public boolean removePlayerMapEntry(String playerName) {
@@ -316,6 +337,10 @@ public class PlayerServersAPI {
         this.pl.serverManager.doDelete(file);
     }
     
+    public File getDataFolder() {
+    	return this.pl.getDataFolder();
+    }
+    
     @Deprecated
     public Controller getWrapperController() {
     	return this.pl.ctrl;
@@ -331,7 +356,26 @@ public class PlayerServersAPI {
         return intArray;
     }
     
-    public PlayerServers getInstance() {
-    	return this.pl;
-    }
+ // https://github.com/nuckle/minecraft-offline-uuid-generator/blob/main/src/js/uuid.js
+ 	public static String getOfflineUUID(String name) {
+         if (name == null || name.isEmpty()) {
+             return null;
+         }
+         String input = "OfflinePlayer:" + name;
+
+         try {
+             MessageDigest md = MessageDigest.getInstance("MD5");
+             byte[] hash = md.digest(input.getBytes(StandardCharsets.UTF_8));
+             hash[6] = (byte) ((hash[6] & 0x0f) | 0x30); // Set version to 3
+             hash[8] = (byte) ((hash[8] & 0x3f) | 0x80); // Set variant to RFC 4122
+             StringBuilder uuidBuilder = new StringBuilder();
+             for (byte b : hash) {
+                 uuidBuilder.append(String.format("%02x", b));
+             }
+             String uuid = uuidBuilder.toString();
+             return uuid.substring(0, 8) + "-" +uuid.substring(8, 12) + "-" +uuid.substring(12, 16) + "-" +uuid.substring(16, 20) + "-" +uuid.substring(20);
+         } catch (NoSuchAlgorithmException e) {
+             return null;
+         }
+     }
 }

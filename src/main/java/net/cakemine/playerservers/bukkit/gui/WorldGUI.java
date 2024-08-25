@@ -19,11 +19,11 @@ public class WorldGUI extends CustomGUI
     
     @Override
     public void open(Player player, Inventory reopenGUI) {
-        reopenGUI = this.reopenGUI(player, reopenGUI, 3, this.getTitle());
+        reopenGUI = this.reopenInventory(player, reopenGUI, 3, this.getTitle());
         if (reopenGUI == null) {
             return;
         }
-        this.fill(reopenGUI);
+        this.fillInventory(reopenGUI);
         this.addBackButtons(reopenGUI);
         if (Bukkit.getAllowNether()) {
             reopenGUI.setItem(11, this.getItem("allow-nether-on"));
@@ -48,7 +48,7 @@ public class WorldGUI extends CustomGUI
     
     @EventHandler
     @Override
-    public void onClick(InventoryClickEvent inventoryClickEvent) {
+    public void onInventoryClick(InventoryClickEvent inventoryClickEvent) {
         String stripColor = this.pl.utils.stripColor(inventoryClickEvent.getView().getTitle());
         Inventory inventory = inventoryClickEvent.getInventory();
         ItemStack currentItem = inventoryClickEvent.getCurrentItem();
@@ -59,7 +59,7 @@ public class WorldGUI extends CustomGUI
             if (!guiClickEvent.isCancelled()) {
                 inventoryClickEvent.setCancelled(true);
                 if (currentItem == null || currentItem.getType() == Material.AIR || !currentItem.hasItemMeta()) {
-                    this.close(player);
+                	player.closeInventory();
                 }
                 else if (this.getItem("allow-nether-on").equals(currentItem)) {
                     this.pl.settingsManager.changeSetting("allow-nether", "false");
@@ -98,7 +98,7 @@ public class WorldGUI extends CustomGUI
                     this.pl.gui.getGUI("settings").open(player, inventory);
                 }
                 else if (!this.getFillItem().equals(currentItem)) {
-                    this.close(player);
+                	player.closeInventory();
                 }
             }
         }

@@ -8,117 +8,133 @@ import net.cakemine.playerservers.bukkit.events.*;
 import org.bukkit.event.*;
 import org.bukkit.*;
 
-public class GamemodeGUI extends CustomGUI
-{
-    PlayerServers pl;
-    
+public class GamemodeGUI extends CustomGUI {
+    private final PlayerServers pl;
+
     public GamemodeGUI(PlayerServers pl) {
         super(pl);
         this.pl = pl;
     }
-    
+
     private void resetSelected(Inventory inventory) {
-        ItemStack selected = new ItemStack(this.getItem("creative"));
-        ItemStack selected2 = new ItemStack(this.getItem("survival"));
-        ItemStack selected3 = new ItemStack(this.getItem("adventure"));
-        ItemStack selected4 = new ItemStack(this.getItem("spectator"));
+        ItemStack survival = getItem("survival");
+        ItemStack creative = getItem("creative");
+        ItemStack adventure = getItem("adventure");
+        ItemStack spectator = getItem("spectator");
+
         inventory.clear(11);
         inventory.clear(12);
         inventory.clear(14);
         inventory.clear(15);
+
+        // Get the current game mode and set the selected item
         switch (Bukkit.getDefaultGameMode()) {
-            case SURVIVAL: {
-                this.setSelected(selected2);
-                break;
-            }
-            case CREATIVE: {
-                this.setSelected(selected);
-                break;
-            }
-            case ADVENTURE: {
-                this.setSelected(selected3);
-                break;
-            }
-            case SPECTATOR: {
-                this.setSelected(selected4);
-                break;
-            }
+            case SURVIVAL -> setSelected(survival);
+            case CREATIVE -> setSelected(creative);
+            case ADVENTURE -> setSelected(adventure);
+            case SPECTATOR -> setSelected(spectator);
         }
-        inventory.setItem(11, selected2);
-        inventory.setItem(12, selected);
-        inventory.setItem(14, selected3);
-        inventory.setItem(15, selected4);
+
+        // Set the items in the inventory
+        inventory.setItem(11, survival);
+        inventory.setItem(12, creative);
+        inventory.setItem(14, adventure);
+        inventory.setItem(15, spectator);
     }
-    
+
     @Override
-    public void open(Player player, Inventory reopenGUI) {
-        reopenGUI = this.reopenGUI(player, reopenGUI, 3, this.getTitle());
-        if (reopenGUI == null) {
+    public void open(Player player, Inventory inventory) {
+        inventory = reopenInventory(player, inventory, 3, getTitle());
+        if (inventory == null) {
             return;
         }
-        this.fill(reopenGUI);
-        this.addBackButtons(reopenGUI);
-        this.resetSelected(reopenGUI);
-        if (this.pl.settingsManager.getSetting("force-gamemode").equalsIgnoreCase("true")) {
-            reopenGUI.setItem(4, this.getItem("force-gamemode-on"));
+
+        fillInventory(inventory);  // Fill the inventory with items
+        addBackButtons(inventory);  // Add back buttons using CustomGUI
+        resetSelected(inventory);  // Set selected game mode items
+
+        // Handle the force-gamemode setting
+        if (pl.settingsManager.getSetting("force-gamemode").equalsIgnoreCase("true")) {
+            inventory.setItem(4, getItem("force-gamemode-on"));
+        } else {
+            inventory.setItem(4, getItem("force-gamemode-off"));
         }
-        else {
-            reopenGUI.setItem(4, this.getItem("force-gamemode-off"));
-        }
+
+        player.openInventory(inventory);  // Open the inventory for the player
     }
-    
+
     @EventHandler
     @Override
-    public void onClick(InventoryClickEvent inventoryClickEvent) {
-        String stripColor = this.pl.utils.stripColor(inventoryClickEvent.getView().getTitle());
-        Inventory inventory = inventoryClickEvent.getInventory();
-        ItemStack currentItem = inventoryClickEvent.getCurrentItem();
-        Player player = (Player)inventoryClickEvent.getWhoClicked();
-        GuiClickEvent guiClickEvent = new GuiClickEvent(this.pl, player, inventory, stripColor, currentItem);
-        if (stripColor.equalsIgnoreCase(this.pl.utils.stripColor(this.getTitle()))) {
-            Bukkit.getPluginManager().callEvent((Event)guiClickEvent);
+    public void onInventoryClick(InventoryClickEvent event) {
+        String inventoryTitle = pl.utils.stripColor(event.getView().getTitle());
+        Inventory inventory = event.getInventory();
+        ItemStack currentItem = event.getCurrentItem();
+        Player player = (Player) event.getWhoClicked();
+
+        if (inventoryTitle.equalsIgnoreCase(pl.utils.stripColor(getTitle()))) {
+            GuiClickEvent guiClickEvent = new GuiClickEvent(pl, player, inventory, inventoryTitle, currentItem);
+            Bukkit.getPluginManager().callEvent(guiClickEvent);
+
             if (!guiClickEvent.isCancelled()) {
-                inventoryClickEvent.setCancelled(true);
+                event.setCancelled(true);
+
                 if (currentItem == null || currentItem.getType() == Material.AIR || !currentItem.hasItemMeta()) {
-                    player.closeInventory();
+                    closeInventory(player);
+                    return;
                 }
-                else if (this.getItem("survival").equals((Object)currentItem)) {
-                    this.pl.settingsManager.setGamemode(0);
-                    this.pl.utils.sendMsg(player, this.pl.messages.get("gamemode-changed").replaceAll("%gamemode%", this.pl.getServer().getDefaultGameMode().name()));
-                    this.resetSelected(inventory);
-                }
-                else if (this.getItem("creative").equals((Object)currentItem)) {
-                    this.pl.settingsManager.setGamemode(1);
-                    this.pl.utils.sendMsg(player, this.pl.messages.get("gamemode-changed").replaceAll("%gamemode%", this.pl.getServer().getDefaultGameMode().name()));
-                    this.resetSelected(inventory);
-                }
-                else if (this.getItem("adventure").equals((Object)currentItem)) {
-                    this.pl.settingsManager.setGamemode(2);
-                    this.pl.utils.sendMsg(player, this.pl.messages.get("gamemode-changed").replaceAll("%gamemode%", this.pl.getServer().getDefaultGameMode().name()));
-                    this.resetSelected(inventory);
-                }
-                else if (this.getItem("spectator").equals((Object)currentItem)) {
-                    this.pl.settingsManager.setGamemode(3);
-                    this.pl.utils.sendMsg(player, this.pl.messages.get("gamemode-changed").replaceAll("%gamemode%", this.pl.getServer().getDefaultGameMode().name()));
-                    this.resetSelected(inventory);
-                }
-                else if (this.getItem("force-gamemode-on").equals((Object)currentItem)) {
-                    this.pl.settingsManager.changeSetting("force-gamemode", "false");
-                    inventory.setItem(4, this.getItem("force-gamemode-off"));
-                    this.pl.utils.sendMsg(player, this.pl.messages.get("force-gamemode-off"));
-                }
-                else if (this.getItem("force-gamemode-off").equals((Object)currentItem)) {
-                    this.pl.settingsManager.changeSetting("force-gamemode", "true");
-                    inventory.setItem(4, this.getItem("force-gamemode-on"));
-                    this.pl.utils.sendMsg(player, this.pl.messages.get("force-gamemode-on"));
-                }
-                else if (this.getBackButton().equals((Object)currentItem)) {
-                    this.pl.gui.getGUI("settings").open(player, inventory);
-                }
-                else if (!this.getFillItem().equals((Object)currentItem)) {
-                    this.close(player);
-                }
+
+                handleGamemodeSelection(player, inventory, currentItem);
             }
         }
+    }
+
+    private void handleGamemodeSelection(Player player, Inventory inventory, ItemStack currentItem) {
+        // Survival mode
+        if (getItem("survival").equals(currentItem)) {
+            changeGamemode(player, inventory, 0, "SURVIVAL");
+        }
+        // Creative mode
+        else if (getItem("creative").equals(currentItem)) {
+            changeGamemode(player, inventory, 1, "CREATIVE");
+        }
+        // Adventure mode
+        else if (getItem("adventure").equals(currentItem)) {
+            changeGamemode(player, inventory, 2, "ADVENTURE");
+        }
+        // Spectator mode
+        else if (getItem("spectator").equals(currentItem)) {
+            changeGamemode(player, inventory, 3, "SPECTATOR");
+        }
+        // Force gamemode toggle
+        else if (getItem("force-gamemode-on").equals(currentItem)) {
+            toggleForceGamemode(player, inventory, false);
+        } else if (getItem("force-gamemode-off").equals(currentItem)) {
+            toggleForceGamemode(player, inventory, true);
+        }
+        // Back button
+        else if (getBackButton().equals(currentItem)) {
+            pl.gui.getGUI("settings").open(player, inventory);
+        } else if (!getFillItem().equals(currentItem)) {
+            closeInventory(player);
+        }
+    }
+
+    private void changeGamemode(Player player, Inventory inventory, int gamemodeValue, String gamemodeName) {
+        pl.settingsManager.setGamemode(gamemodeValue);
+        pl.utils.sendMsg(player, pl.messages.get("gamemode-changed").replaceAll("%gamemode%", gamemodeName));
+        player.getServer().getOnlinePlayers().forEach(user -> {
+        	user.setGameMode(GameMode.getByValue(gamemodeValue));
+        });
+        resetSelected(inventory);
+    }
+
+    private void toggleForceGamemode(Player player, Inventory inventory, boolean enable) {
+        String settingValue = enable ? "true" : "false";
+        String messageKey = enable ? "force-gamemode-on" : "force-gamemode-off";
+        String itemKey = enable ? "force-gamemode-on" : "force-gamemode-off";
+
+        pl.settingsManager.changeSetting("force-gamemode", settingValue);
+        inventory.setItem(4, getItem(itemKey));
+        pl.utils.sendMsg(player, pl.messages.get(messageKey));
     }
 }

@@ -29,7 +29,7 @@ public class PluginSender
     
     public void sendPluginMsg(RegisteredServer server, ByteArrayDataOutput byteArrayDataOutput) {
     	this.pl.proxy.getScheduler().buildTask(this.pl, () -> {
-    		server.sendPluginMessage(MinecraftChannelIdentifier.from("playerservers:core"), byteArrayDataOutput.toByteArray());
+    		server.sendPluginMessage(MinecraftChannelIdentifier.from("playerservers:core"), Base64.getEncoder().encode(byteArrayDataOutput.toByteArray()));
     	}).delay(30L, TimeUnit.MILLISECONDS).schedule();
     }
     

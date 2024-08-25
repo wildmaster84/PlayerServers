@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.*;
 import net.md_5.bungee.api.config.*;
 import java.util.*;
+import java.util.zip.GZIPOutputStream;
+
 import net.md_5.bungee.config.*;
 import java.io.*;
 
@@ -26,7 +28,7 @@ public class PluginSender
         this.pl.proxy.getScheduler().runAsync(this.pl, new Runnable() {
             @Override
             public void run() {
-                server.sendData("playerservers:core", byteArrayDataOutput.toByteArray());
+                server.sendData("playerservers:core", Base64.getEncoder().encode(byteArrayDataOutput.toByteArray()));
             }
         });
     }
@@ -223,8 +225,8 @@ public class PluginSender
             case "templates": {
                 dataOutput.writeUTF("templates");
                 HashMap<String, Object> templates = new HashMap<>();
-                HashMap<String, Object> configSection = new HashMap<>();
                 for (File file : this.pl.templateManager.templates.keySet()) {
+                	HashMap<String, Object> configSection = new HashMap<>();
                 	Configuration configuration = this.pl.templateManager.templates.get(file);
                 	configSection.put("name", configuration.getString("template-name"));
                 	configSection.put("icon", configuration.getString("icon-material"));
@@ -237,7 +239,7 @@ public class PluginSender
 				try {
 					String jsonString = mapper.writeValueAsString(templates);
 					this.pl.utils.debug("input = " + jsonString);
-					dataOutput.writeUTF(Base64.getEncoder().encodeToString(jsonString.getBytes()));
+					dataOutput.writeUTF(jsonString);
 				} catch (JsonProcessingException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

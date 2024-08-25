@@ -1,126 +1,122 @@
 package net.cakemine.playerservers.bukkit.gui;
 
 import net.cakemine.playerservers.bukkit.*;
-import org.bukkit.inventory.*;
 import org.bukkit.entity.*;
 import org.bukkit.event.inventory.*;
 import net.cakemine.playerservers.bukkit.events.*;
 import org.bukkit.*;
-import java.util.*;
+import org.bukkit.inventory.*;
 import org.bukkit.event.*;
+import java.util.*;
 
-public class DifficultyGUI extends CustomGUI
-{
-    PlayerServers pl;
-    
+public class DifficultyGUI extends CustomGUI {
+    private final PlayerServers pl;
+
     public DifficultyGUI(PlayerServers pl) {
         super(pl);
         this.pl = pl;
     }
-    
+
     private void resetSelected(Inventory inventory) {
-        ItemStack selected = new ItemStack(this.getItem("peaceful"));
-        ItemStack selected2 = new ItemStack(this.getItem("easy"));
-        ItemStack selected3 = new ItemStack(this.getItem("normal"));
-        ItemStack selected4 = new ItemStack(this.getItem("hard"));
+        ItemStack peaceful = getItem("peaceful");
+        ItemStack easy = getItem("easy");
+        ItemStack normal = getItem("normal");
+        ItemStack hard = getItem("hard");
+
         inventory.clear(11);
         inventory.clear(13);
         inventory.clear(14);
         inventory.clear(15);
-        switch (Bukkit.getWorlds().iterator().next().getDifficulty().ordinal()) {
-            case 0: {
-                this.setSelected(selected);
-                break;
-            }
-            case 1: {
-                this.setSelected(selected2);
-                break;
-            }
-            case 2: {
-                this.setSelected(selected3);
-                break;
-            }
-            case 3: {
-                this.setSelected(selected4);
-                break;
-            }
+
+        // Get the current difficulty and set the selected item
+        switch (Bukkit.getWorlds().iterator().next().getDifficulty()) {
+            case PEACEFUL -> setSelected(peaceful);
+            case EASY -> setSelected(easy);
+            case NORMAL -> setSelected(normal);
+            case HARD -> setSelected(hard);
         }
-        inventory.setItem(11, selected);
-        inventory.setItem(13, selected2);
-        inventory.setItem(14, selected3);
-        inventory.setItem(15, selected4);
+
+        // Set the items in the inventory
+        inventory.setItem(11, peaceful);
+        inventory.setItem(13, easy);
+        inventory.setItem(14, normal);
+        inventory.setItem(15, hard);
     }
-    
+
     @Override
-    public void open(Player player, Inventory reopenGUI) {
-        reopenGUI = this.reopenGUI(player, reopenGUI, 3, this.getTitle());
-        if (reopenGUI == null) {
+    public void open(Player player, Inventory inventory) {
+        inventory = reopenInventory(player, inventory, 3, getTitle());
+        if (inventory == null) {
             return;
         }
-        this.fill(reopenGUI);
-        this.addBackButtons(reopenGUI);
-        this.resetSelected(reopenGUI);
+
+        fillInventory(inventory);
+        addBackButtons(inventory);
+        resetSelected(inventory);
+        player.openInventory(inventory);
     }
-    
+
     @EventHandler
     @Override
-    public void onClick(InventoryClickEvent inventoryClickEvent) {
-        String stripColor = this.pl.utils.stripColor(inventoryClickEvent.getView().getTitle());
-        Inventory inventory = inventoryClickEvent.getInventory();
-        ItemStack currentItem = inventoryClickEvent.getCurrentItem();
-        Player player = (Player)inventoryClickEvent.getWhoClicked();
-        GuiClickEvent guiClickEvent = new GuiClickEvent(this.pl, player, inventory, stripColor, currentItem);
-        if (stripColor.equalsIgnoreCase(this.pl.utils.stripColor(this.getTitle()))) {
+    public void onInventoryClick(InventoryClickEvent event) {
+        String inventoryTitle = pl.utils.stripColor(event.getView().getTitle());
+        Inventory inventory = event.getInventory();
+        ItemStack currentItem = event.getCurrentItem();
+        Player player = (Player) event.getWhoClicked();
+
+        if (inventoryTitle.equalsIgnoreCase(pl.utils.stripColor(getTitle()))) {
+            GuiClickEvent guiClickEvent = new GuiClickEvent(pl, player, inventory, inventoryTitle, currentItem);
             Bukkit.getPluginManager().callEvent(guiClickEvent);
+
             if (!guiClickEvent.isCancelled()) {
-                inventoryClickEvent.setCancelled(true);
+                event.setCancelled(true);
+
                 if (currentItem == null || currentItem.getType() == Material.AIR || !currentItem.hasItemMeta()) {
-                    this.close(player);
+                    closeInventory(player);
+                    return;
                 }
-                else {
-                    if (this.getItem("peaceful").equals(currentItem)) {
-                        Iterator<World> iterator = Bukkit.getWorlds().iterator();
-                        while (iterator.hasNext()) {
-                            iterator.next().setDifficulty(Difficulty.PEACEFUL);
-                        }
-                        this.pl.settingsManager.changeSetting("difficulty", "0");
-                        this.pl.utils.sendMsg(player, this.pl.messages.get("difficulty-changed").replaceAll("%difficulty%", Difficulty.PEACEFUL.name()));
-                    }
-                    else if (this.getItem("easy").equals(currentItem)) {
-                        Iterator<World> iterator2 = Bukkit.getWorlds().iterator();
-                        while (iterator2.hasNext()) {
-                            iterator2.next().setDifficulty(Difficulty.EASY);
-                        }
-                        this.pl.settingsManager.changeSetting("difficulty", "1");
-                        this.pl.utils.sendMsg(player, this.pl.messages.get("difficulty-changed").replaceAll("%difficulty%", Difficulty.EASY.name()));
-                    }
-                    else if (this.getItem("normal").equals(currentItem)) {
-                        Iterator<World> iterator3 = Bukkit.getWorlds().iterator();
-                        while (iterator3.hasNext()) {
-                            iterator3.next().setDifficulty(Difficulty.NORMAL);
-                        }
-                        this.pl.settingsManager.changeSetting("difficulty", "2");
-                        this.pl.utils.sendMsg(player, this.pl.messages.get("difficulty-changed").replaceAll("%difficulty%", Difficulty.NORMAL.name()));
-                    }
-                    else if (this.getItem("hard").equals(currentItem)) {
-                        Iterator<World> iterator4 = Bukkit.getWorlds().iterator();
-                        while (iterator4.hasNext()) {
-                            iterator4.next().setDifficulty(Difficulty.HARD);
-                        }
-                        this.pl.settingsManager.changeSetting("difficulty", "3");
-                        this.pl.utils.sendMsg(player, this.pl.messages.get("difficulty-changed").replaceAll("%difficulty%", Difficulty.HARD.name()));
-                    }
-                    else {
-                        if (this.getBackButton().equals(currentItem)) {
-                            this.pl.gui.getGUI("settings").open(player, inventory);
-                            return;
-                        }
-                        this.close(player);
-                        return;
-                    }
-                    this.resetSelected(inventory);
-                }
+
+                handleDifficultyChange(player, inventory, currentItem);
             }
         }
+    }
+
+    private void handleDifficultyChange(Player player, Inventory inventory, ItemStack currentItem) {
+        // Peaceful difficulty
+        if (getItem("peaceful").equals(currentItem)) {
+            setWorldDifficulty(Difficulty.PEACEFUL, player, "0");
+        }
+        // Easy difficulty
+        else if (getItem("easy").equals(currentItem)) {
+            setWorldDifficulty(Difficulty.EASY, player, "1");
+        }
+        // Normal difficulty
+        else if (getItem("normal").equals(currentItem)) {
+            setWorldDifficulty(Difficulty.NORMAL, player, "2");
+        }
+        // Hard difficulty
+        else if (getItem("hard").equals(currentItem)) {
+            setWorldDifficulty(Difficulty.HARD, player, "3");
+        }
+        // Back button
+        else if (getBackButton().equals(currentItem)) {
+            pl.gui.getGUI("settings").open(player, inventory);
+        } else {
+            closeInventory(player);
+        }
+
+        // Reset the selected difficulty after the change
+        resetSelected(inventory);
+    }
+
+    private void setWorldDifficulty(Difficulty difficulty, Player player, String difficultyValue) {
+        // Set the difficulty for all worlds
+        for (World world : Bukkit.getWorlds()) {
+            world.setDifficulty(difficulty);
+        }
+
+        // Update the difficulty setting and send a message to the player
+        pl.settingsManager.changeSetting("difficulty", difficultyValue);
+        pl.utils.sendMsg(player, pl.messages.get("difficulty-changed").replace("%difficulty%", difficulty.name()));
     }
 }

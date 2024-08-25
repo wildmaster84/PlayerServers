@@ -9,6 +9,7 @@ import org.bukkit.entity.*;
 import net.cakemine.playerservers.bukkit.*;
 import org.bukkit.*;
 import java.util.*;
+import java.util.zip.GZIPInputStream;
 import java.io.*;
 
 public class PluginListener implements PluginMessageListener
@@ -22,7 +23,7 @@ public class PluginListener implements PluginMessageListener
     }
     
     public void onPluginMessageReceived(String s, Player player, byte[] array) {
-        DataInputStream dataInputStream = new DataInputStream(new ByteArrayInputStream(array));
+        DataInputStream dataInputStream = new DataInputStream(new ByteArrayInputStream(Base64.getDecoder().decode(array)));
         try {
             String utf = dataInputStream.readUTF();
             this.pl.utils.debug("pluginmessage subchannel = " + utf);
@@ -105,7 +106,6 @@ public class PluginListener implements PluginMessageListener
                 case "blockedcmds": {
                     PlayerListener.blockedCmds.clear();
                     Collections.addAll(PlayerListener.blockedCmds, utf2.split("(%%%)"));
-                    this.pl.listener.updateCmds();
                     this.pl.utils.debug("blockedCmds = " + PlayerListener.blockedCmds);
                     this.pl.cmdsLoaded = true;
                     PluginSender sender10 = this.pl.sender;
@@ -143,7 +143,7 @@ public class PluginListener implements PluginMessageListener
                     break;
                 }
                 case "templates": {
-                	HashMap<String, HashMap<String, String>> jsonMap = mapper.readValue(Base64.getDecoder().decode(utf2), new TypeReference<HashMap<String, HashMap<String, String>>>() {});
+                	HashMap<String, HashMap<String, String>> jsonMap = mapper.readValue(utf2, new TypeReference<HashMap<String, HashMap<String, String>>>() {});
                 	this.pl.utils.debug("input = " + jsonMap.toString());
                 	for (String tamplate : jsonMap.keySet()) {
                 		this.pl.templates.put(tamplate, jsonMap.get(tamplate));
@@ -154,7 +154,7 @@ public class PluginListener implements PluginMessageListener
                     break;
                 }
                 case "controlGUI": {
-                    HashMap<String, Object> jsonMap = mapper.readValue(Base64.getDecoder().decode(utf2), new TypeReference<HashMap<String, Object>>() {});
+                    HashMap<String, String> jsonMap = mapper.readValue(Base64.getDecoder().decode(utf2), new TypeReference<HashMap<String, String>>() {});
                     this.pl.utils.debug("input = " + jsonMap.toString());
                     String uuid = dataInputStream.readUTF();
                     this.pl.gui.getGUI("control").open(this.pl.getServer().getPlayer(UUID.fromString(uuid)), null, 0, jsonMap);
@@ -170,7 +170,7 @@ public class PluginListener implements PluginMessageListener
             		String uuid = dataInputStream.readUTF();
             		this.pl.utils.debug("input = " + jsonMap.toString());
             		this.pl.utils.debug("command sender = " + uuid);
-            		this.pl.gui.getGUI("servers").open(this.pl.getServer().getPlayer(UUID.fromString(uuid)), null, 0, jsonMap);
+            		this.pl.gui.getGUI("servers").openWithExtras(this.pl.getServer().getPlayer(UUID.fromString(uuid)), null, 0, jsonMap);
                     break;
                 }
                 case "reSync": {

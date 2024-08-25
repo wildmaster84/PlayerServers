@@ -19,11 +19,11 @@ public class MobGUI extends CustomGUI
     
     @Override
     public void open(Player player, Inventory reopenGUI) {
-        reopenGUI = this.reopenGUI(player, reopenGUI, 3, this.getTitle());
+        reopenGUI = this.reopenInventory(player, reopenGUI, 3, this.getTitle());
         if (reopenGUI == null) {
             return;
         }
-        this.fill(player, reopenGUI, 0);
+        this.fillInventory(player, reopenGUI, 0);
         this.addBackButtons(reopenGUI);
         if (this.pl.settingsManager.getSetting("spawn-monsters").equalsIgnoreCase("true")) {
             reopenGUI.setItem(12, this.getItem("monster-spawns-on"));
@@ -47,7 +47,7 @@ public class MobGUI extends CustomGUI
     
     @EventHandler
     @Override
-    public void onClick(InventoryClickEvent inventoryClickEvent) {
+    public void onInventoryClick(InventoryClickEvent inventoryClickEvent) {
         String stripColor = this.pl.utils.stripColor(inventoryClickEvent.getView().getTitle());
         Inventory inventory = inventoryClickEvent.getInventory();
         ItemStack currentItem = inventoryClickEvent.getCurrentItem();
@@ -94,7 +94,7 @@ public class MobGUI extends CustomGUI
                     this.pl.gui.getGUI("settings").open(player, inventory);
                 }
                 else if (!this.getFillItem().equals((Object)currentItem)) {
-                    this.close(player);
+                	player.closeInventory();
                 }
             }
         }

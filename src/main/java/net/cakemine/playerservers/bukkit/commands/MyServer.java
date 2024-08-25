@@ -5,7 +5,6 @@ import org.bukkit.entity.*;
 import org.bukkit.permissions.*;
 import org.bukkit.*;
 import org.bukkit.BanList.Type;
-import org.bukkit.ban.ProfileBanList;
 import org.bukkit.command.*;
 import java.util.*;
 
@@ -292,8 +291,8 @@ public class MyServer implements CommandExecutor
                             this.pl.utils.sendMsg(player2, this.pl.messages.get("got-banned").replaceAll("%player%", player.getName()).replaceAll("%reason%", s4));
                             this.pl.utils.movePlayer(player2, this.pl.fallbackSrv);
                         }
-                        ProfileBanList banList = Bukkit.getServer().getBanList(Type.PROFILE);
-                        banList.addBan(player.getPlayerProfile(), "Unspecified reason", Date.from(null), null);
+                        BanList banList = Bukkit.getServer().getBanList(Type.NAME);
+                        banList.addBan(player.getName(), "Unspecified reason", Date.from(null), null);
                     }
                     else {
                         if (offlinePlayer.isOnline()) {
@@ -301,8 +300,8 @@ public class MyServer implements CommandExecutor
                             this.pl.utils.sendMsg(player3, this.pl.messages.get("got-banned").replaceAll("%player%", player.getName()).replaceAll("%reason%", "Unspecified reason"));
                             this.pl.utils.movePlayer(player3, this.pl.fallbackSrv);
                         }
-                        ProfileBanList banList = Bukkit.getServer().getBanList(Type.PROFILE);
-                        banList.addBan(player.getPlayerProfile(), "Unspecified reason", Date.from(null), null);
+                        BanList banList = Bukkit.getServer().getBanList(Type.NAME);
+                        banList.addBan(player.getName(), "Unspecified reason", Date.from(null), null);
                     }
                     this.pl.utils.sendMsg(player, this.pl.messages.get("banned-player").replaceAll("%player%", offlinePlayer.getName()));
                     break;
@@ -318,8 +317,8 @@ public class MyServer implements CommandExecutor
                 }
                 if (array.length >= 2) {
                     String s5 = array[1];
-                    ProfileBanList banList = Bukkit.getServer().getBanList(Type.PROFILE);
-                    banList.pardon(player.getPlayerProfile());
+                    BanList banList = Bukkit.getServer().getBanList(Type.NAME);
+                    banList.pardon(player.getName());
                     this.pl.utils.sendMsg(player, this.pl.messages.get("unbanned-player").replaceAll("%player%", s5));
                     break;
                 }

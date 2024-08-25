@@ -39,7 +39,7 @@ public class PluginListener {
     @Subscribe
     public void onPluginMessage(PluginMessageEvent pluginMessageEvent) {
         if (pluginMessageEvent.getIdentifier().getId().equals("playerservers:core")) {
-            DataInputStream dataInputStream = new DataInputStream(new ByteArrayInputStream(pluginMessageEvent.getData()));
+            DataInputStream dataInputStream = new DataInputStream(new ByteArrayInputStream(Base64.getDecoder().decode(pluginMessageEvent.getData())));
             try {
                 String utf = dataInputStream.readUTF();
                 this.pl.utils.debug("Received " + utf + " plugin message");
@@ -105,11 +105,11 @@ public class PluginListener {
                                 break;
                             }
                             case "removeBungeeServer": {
-                                PlayerServers.getApi().removeBungeeServer(utf8);
+                                PlayerServers.getApi().removeVelocityServer(utf8);
                                 break;
                             }
                             case "addBungeeServer": {
-                                PlayerServers.getApi().addBungeeServer(utf8, dataInputStream.readUTF(), (int)Integer.valueOf(dataInputStream.readUTF()), dataInputStream.readUTF(), Integer.valueOf(dataInputStream.readUTF()));
+                                PlayerServers.getApi().addVelocityServer(utf8, dataInputStream.readUTF(), (int)Integer.valueOf(dataInputStream.readUTF()), dataInputStream.readUTF(), Integer.valueOf(dataInputStream.readUTF()));
                                 break;
                             }
                             case "stopAllServers": {

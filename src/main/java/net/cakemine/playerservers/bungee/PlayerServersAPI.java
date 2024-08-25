@@ -12,6 +12,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.logging.Level;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -37,6 +38,14 @@ public class PlayerServersAPI {
         this.pl.utils.debug(s);
     }
     
+    public void log(String s) {
+        this.pl.utils.log(s);
+    }
+    
+    public void log(Level level, String s) {
+        this.pl.utils.log(level, s);
+    }
+    
     public String getPluginPrefix() {
         return this.pl.prefix;
     }
@@ -59,6 +68,10 @@ public class PlayerServersAPI {
     
     public String getServerMapSetting(String serverName, String setting) {
         return this.pl.serverManager.serverMap.get(serverName).getSetting(setting);
+    }
+    
+    public ServerManager getServerManager() {
+    	return this.pl.serverManager;
     }
     
     public void setServerMapSetting(String serverName, String setting, String value) {
@@ -103,14 +116,14 @@ public class PlayerServersAPI {
         if (this.pl.serverManager.getOwnerId(serverName) == null) {
             return 0;
         }
-        return this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(this.pl.serverManager.getOwnerId(serverName)).getSetting("memory").split("\\/")[0]);
+        return this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(this.pl.serverManager.getOwnerId(serverName)).getSetting("memory").split("\\/")[1]);
     }
     
     public int getServerXms(String serverName) {
         if (this.pl.serverManager.getOwnerId(serverName) == null) {
             return 0;
         }
-        return this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(this.pl.serverManager.getOwnerId(serverName)).getSetting("memory").split("\\/")[1]);
+        return this.pl.utils.memStringToInt(this.pl.serverManager.serverMap.get(this.pl.serverManager.getOwnerId(serverName)).getSetting("memory").split("\\/")[0]);
     }
     
     public String getPlayerServerName(UUID uuid) {
@@ -295,7 +308,7 @@ public class PlayerServersAPI {
     }
     
     public void putPlayerMapEntry(String playerName, UUID uuid) {
-        this.pl.loadPlayer(uuid, new StoredPlayer(uuid));
+        this.pl.loadPlayer(uuid, new StoredPlayer(uuid, this.pl));
     }
     
     public boolean removePlayerMapEntry(String playerName) {
@@ -327,6 +340,10 @@ public class PlayerServersAPI {
         this.pl.serverManager.doDelete(file);
     }
     
+    public File getDataFolder() {
+    	return this.pl.getDataFolder();
+    }
+    
     @Deprecated
     public Controller getWrapperController() {
     	return this.pl.ctrl;
@@ -341,11 +358,6 @@ public class PlayerServersAPI {
         }
         return intArray;
     }
-
-	public PlayerServers getInstance() {
-		// TODO Auto-generated method stub
-		return this.pl;
-	}
 	
 	// https://github.com/nuckle/minecraft-offline-uuid-generator/blob/main/src/js/uuid.js
 	public static String getOfflineUUID(String name) {

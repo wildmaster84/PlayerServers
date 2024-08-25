@@ -160,31 +160,26 @@ public class PlayerServersAPI
         this.pl.gui.getGUI("world-settings").open(player, null);
     }
     
-    public HashMap<String, CustomGUI> getGUIMap() {
-        return this.pl.gui.customGUIs;
-    }
-    
     public CustomGUI getCustomGUI(String s) {
-        if (this.pl.gui.customGUIs.containsKey(s)) {
-            return this.pl.gui.customGUIs.get(s);
+        if (this.pl.gui.getGUI(s) != null) {
+            return this.pl.gui.getGUI(s);
         }
         return null;
     }
     
     public void putCustomGUI(String s, CustomGUI customGUI) {
     	this.pl.gui.putGUI(s, customGUI);
-        this.pl.gui.customGUIs.put(s, customGUI);
     }
     
     public void removeCustomGUI(String s) {
-        if (this.pl.gui.customGUIs.containsKey(s)) {
-            this.pl.gui.customGUIs.remove(s);
+        if (this.pl.gui.getGUI(s) != null) {
+            this.pl.gui.removeGUI(s);
         }
     }
     
     public CustomGUI newCustomGUI(String s) {
         CustomGUI customGUI = new CustomGUI(this.pl);
-        this.pl.gui.customGUIs.put(s, customGUI);
+        this.pl.gui.putGUI(s, customGUI);
         return customGUI;
     }
     
@@ -193,11 +188,11 @@ public class PlayerServersAPI
         if (!this.customGuis.contains(replaceAll)) {
             this.customGuis.add(replaceAll);
         }
-        return new CustomGUI(this.pl).reopenGUI(player, inventory, n, replaceAll);
+        return new CustomGUI(this.pl).reopenInventory(player, inventory, n, replaceAll);
     }
     
     public ItemStack customItemStack(int n, Material material, short n2, String s, String s2) {
-        return this.pl.gui.item(n, material, n2, s, s2);
+        return this.pl.gui.createItem(n, material, n2, s, s2);
     }
     
     public ItemStack customItemStack(int n, Material material, short n2, String s, List<String> list) {
@@ -207,11 +202,11 @@ public class PlayerServersAPI
             sb.append(iterator.next());
             sb.append("||");
         }
-        return this.pl.gui.item(n, material, n2, s, sb.toString());
+        return this.pl.gui.createItem(n, material, n2, s, sb.toString());
     }
     
     public ItemStack setSelected(ItemStack itemStack) {
-        itemStack.addUnsafeEnchantment(Enchantment.LUCK, 1);
+        itemStack.addUnsafeEnchantment(Enchantment.THORNS, 1);
         ItemMeta itemMeta = itemStack.getItemMeta();
         itemMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         itemStack.setItemMeta(itemMeta);

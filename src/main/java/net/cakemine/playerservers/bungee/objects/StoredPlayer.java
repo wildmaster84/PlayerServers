@@ -10,7 +10,7 @@ import net.cakemine.playerservers.bungee.PlayerServers;
 import net.md_5.bungee.config.Configuration;
 
 public class StoredPlayer {
-	PlayerServers pl = PlayerServers.getApi().getInstance();
+	PlayerServers pl;
 	public Configuration playerStore;
 
 	final UUID uuid;
@@ -20,7 +20,8 @@ public class StoredPlayer {
 	HashMap<String, String> playerInfo;
 	HashMap<String, HashMap<String, String>> map;
 	
-	public StoredPlayer(UUID playerUUID) {
+	public StoredPlayer(UUID playerUUID, PlayerServers pl) {
+		this.pl = pl;
 		customSettings = new HashMap<>();
 		permissions = new HashMap<>();
 		playerInfo = new HashMap<>();

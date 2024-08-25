@@ -7,7 +7,6 @@ import net.cakemine.playerservers.bukkit.gui.*;
 import org.bukkit.inventory.*;
 import org.bukkit.*;
 import org.bukkit.BanList.Type;
-import org.bukkit.ban.ProfileBanList;
 
 import java.util.logging.*;
 import org.bukkit.event.*;
@@ -44,7 +43,7 @@ public class PlayerListener implements Listener
         Inventory inventory = inventoryClickEvent.getInventory();
         ItemStack currentItem = inventoryClickEvent.getCurrentItem();
         Player player = (Player)inventoryClickEvent.getWhoClicked();
-        Iterator<CustomGUI> iterator = this.pl.gui.customGUIs.values().iterator();
+        Iterator<CustomGUI> iterator = this.pl.gui.getGUIS().values().iterator();
         while (iterator.hasNext()) {
             if (this.pl.utils.stripColor(iterator.next().getTitle()).equalsIgnoreCase(stripColor)) {
                 CustomGuiClickEvent customGuiClickEvent = new CustomGuiClickEvent(this.pl, player, inventory, stripColor, currentItem);
@@ -63,10 +62,12 @@ public class PlayerListener implements Listener
         if (this.pl.isSlave()) {
             Player player = playerLoginEvent.getPlayer();
             if (this.pl.utils.getOwnerId().equals(player.getUniqueId().toString()) && player.isBanned()) {
-                ProfileBanList banList = Bukkit.getServer().getBanList(Type.PROFILE);
-                banList.pardon(player.getPlayerProfile());
+                BanList banList = Bukkit.getServer().getBanList(Type.NAME);
+                banList.pardon(player.getName());
                 this.pl.utils.log(Level.WARNING, "Server creator was banned, automatically unbanned them!");
             }
+            
+            player.setGameMode(player.getServer().getDefaultGameMode());
         }
     }
     
@@ -138,27 +139,6 @@ public class PlayerListener implements Listener
         }
     }
     
-    public void loadCmds() {
-        if (this.pl.config != null) {
-            if (this.pl.config.getStringList("blocked-commands") != null && !this.pl.config.getStringList("blocked-commands").isEmpty()) {
-                PlayerListener.blockedCmds = (List<String>)this.pl.config.getStringList("blocked-commands");
-                this.pl.utils.debug("blockedCmds = " + PlayerListener.blockedCmds);
-            }
-            else {
-                this.pl.utils.debug("&cBlocked commands list was empty or null!");
-            }
-        }
-        else {
-            this.pl.utils.debug("&cConfig was null!");
-        }
-    }
-    
-    public void updateCmds() {
-        this.pl.utils.debug("Blocked Commands list updating.");
-        this.pl.config.set("blocked-commands", (Object)PlayerListener.blockedCmds);
-        this.pl.saveConfig();
-    }
-    
     @EventHandler
     public void onPlayerCommand(PlayerCommandPreprocessEvent playerCommandPreprocessEvent) {
         if (this.pl.isSlave()) {
@@ -174,7 +154,7 @@ public class PlayerListener implements Listener
                 }
                 Matcher matcher = pattern.matcher(string);
                 if (matcher.find()) {
-                    this.pl.utils.log("Blocked a command from " + player.getName() + " � " + string);
+                    this.pl.utils.log("Blocked a command from " + player.getName() + " »" + string);
                     this.pl.utils.sendMsg(player, this.pl.messages.get("blocked-cmd").replaceAll("(%blocked-command%)", matcher.group(0)));
                     playerCommandPreprocessEvent.setCancelled(true);
                 }
@@ -195,7 +175,7 @@ public class PlayerListener implements Listener
                     pattern = Pattern.compile("(?i)" + s);
                 }
                 if (pattern.matcher(string).find() && !serverCommandEvent.getSender().getName().equals("CONSOLE")) {
-                	this.pl.utils.log("Blocked server command � " + string);
+                	this.pl.utils.log("Blocked server command » " + string);
                     serverCommandEvent.setCommand("/say @p Command Blocked!");
                 }
             }

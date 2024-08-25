@@ -1,5 +1,5 @@
 name: PlayerServers
-version: 2.0.1-b4
+version: 2.1.0
 main: "net.cakemine.playerservers.bukkit.PlayerServers"
 authors: ["wildmaster84"]
 author: "wildmaster84"

@@ -214,6 +214,21 @@ public class Utils
         return this.pl.utils.getName(s);
     }
     
+    public String getSrvMaxPlayers(String s) {
+        if (!this.pl.serverManager.hasServer(s)) {
+            this.pl.utils.log(Level.WARNING, "Tried to get server name for " + s + "'s server, but server did not exist in the server map (servers.yml)! Returned \"empty\"");
+            return "empty";
+        }
+        if (this.pl.serverManager.getServerInfo(s, "max-players") != null && !this.pl.serverManager.getServerInfo(s, "max-players").equalsIgnoreCase("null")) {
+            return this.pl.serverManager.getServerInfo(s, "max-players");
+        }
+        if (this.pl.settingsManager.propExists(s) && this.pl.settingsManager.getSetting(s, "max-players") != null && !this.pl.settingsManager.getSetting(s, "max-players").equalsIgnoreCase("null")) {
+            return this.pl.settingsManager.getSetting(s, "max-players");
+        }
+        this.pl.utils.log(Level.SEVERE, s + "'s server name was null! Using their name instead");
+        return this.pl.utils.getName(s);
+    }
+    
     public String getSrvIp(String s) {
         if (!this.pl.serverManager.hasServer(s)) {
             this.pl.utils.log(Level.WARNING, "Tried to get server IP for " + s + "'s server, but server did not exist in the server map (servers.yml)!");
@@ -347,7 +362,7 @@ public class Utils
             JsonObject jsonObject2 = (JsonObject)new Gson().fromJson(line2, JsonObject.class);
             if (jsonObject2.get("code").getAsString().contains("player.found")) {
                 String uuid = jsonObject2.getAsJsonObject("data").getAsJsonObject("player").get("id").getAsString();
-                pl.loadPlayer(UUID.fromString(uuid), new StoredPlayer(UUID.fromString(uuid)));
+                pl.loadPlayer(UUID.fromString(uuid), new StoredPlayer(UUID.fromString(uuid), pl));
                 debug("fetchUUID from PlayerDB.com returns " + uuid);
                 return uuid;
             }
@@ -376,7 +391,7 @@ public class Utils
             JsonObject jsonObject3 = (JsonObject)new Gson().fromJson(line3, JsonObject.class);
             if (jsonObject3.get("error") == null) {
                 String replaceAll = jsonObject3.get("id").getAsString().replaceAll("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5");
-                pl.loadPlayer(UUID.fromString(replaceAll), new StoredPlayer(UUID.fromString(replaceAll)));
+                pl.loadPlayer(UUID.fromString(replaceAll), new StoredPlayer(UUID.fromString(replaceAll), pl));
                 debug("fetchUUID from Mojang returns " + replaceAll);
                 return replaceAll;
             }
@@ -421,7 +436,7 @@ public class Utils
                     JsonObject jsonObject2 = (JsonObject)new Gson().fromJson(line2, JsonObject.class);
                     if (jsonObject2.get("code").getAsString().contains("player.found")) {
                         String uuid = jsonObject2.getAsJsonObject("data").getAsJsonObject("player").get("username").getAsString();
-                        pl.loadPlayer(UUID.fromString(uuid), new StoredPlayer(UUID.fromString(uuid)));
+                        pl.loadPlayer(UUID.fromString(uuid), new StoredPlayer(UUID.fromString(uuid), pl));
                         debug("fetchUUID from PlayerDB.com returns " + uuid);
                         return uuid;
                     }
@@ -620,8 +635,6 @@ public class Utils
 		        		break;
 		        	}
 		        	if (currentVersion[i] > newVersion[i]) {
-		        		pl.utils.log(String.valueOf(currentVersion[i]));
-		        		pl.utils.log(String.valueOf(newVersion[i]));
 		        		dev = true;
 		        		break;
 		        	}

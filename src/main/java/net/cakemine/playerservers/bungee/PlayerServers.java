@@ -21,7 +21,6 @@ import org.yaml.snakeyaml.Yaml;
 
 public class PlayerServers extends Plugin {
     public ProxyServer proxy;
-    public List<String> running = new ArrayList<>();
     public ServerManager serverManager;
     public ExpiryTracker expiryTracker;
     public SettingsManager settingsManager;
@@ -110,27 +109,26 @@ public class PlayerServers extends Plugin {
     }
     
     public void onEnable() {
-        this.vers = this.getDescription().getVersion();
-        this.usingWindows = this.usingWindows();
-        this.proxyAddress = this.utils.getProxyIp();
-        this.proxy.registerChannel("playerservers:core");
-        this.proxy.registerChannel("bungeecord:proxy");
-        this.proxy.getPluginManager().registerListener(this, (Listener)new Listeners(this));
-        this.proxy.getPluginManager().registerListener(this, (Listener)new PluginListener(this));
+        vers = getDescription().getVersion();
+        usingWindows = usingWindows();
+        proxyAddress = utils.getProxyIp();
+        proxy.registerChannel("playerservers:core");
+        proxy.registerChannel("bungeecord:proxy");
+        proxy.getPluginManager().registerListener(this, (Listener)new Listeners(this));
+        proxy.getPluginManager().registerListener(this, (Listener)new PluginListener(this));
         PlayerServers.api = new PlayerServersAPI(this);
-        this.reload();
-        this.setupScripts();
-        this.playerServer = new PlayerServerCMD(this, this.psCommand);
-        this.proxy.getScheduler().schedule(this, new RepeatTasks(this), 30L, 30L, TimeUnit.SECONDS);
-        this.proxy.getPluginManager().registerCommand(this, (Command)new PlayerServerCMD(this, this.psCommand));
-        this.proxy.getPluginManager().registerCommand(this, (Command)new PlayerServerAdmin(this));
-        this.loadOnlineServers();
+        reload();
+        setupScripts();
+        playerServer = new PlayerServerCMD(this, psCommand);
+        proxy.getScheduler().schedule(this, new RepeatTasks(this), 30L, 30L, TimeUnit.SECONDS);
+        proxy.getPluginManager().registerCommand(this, (Command)new PlayerServerCMD(this, psCommand));
+        proxy.getPluginManager().registerCommand(this, (Command)new PlayerServerAdmin(this));
     }
     
     public void onDisable() {
-        this.proxy.getScheduler().cancel(this);
-        if (this.wrapper.equalsIgnoreCase("default")) {
-            this.ctrl.disconnect();
+        proxy.getScheduler().cancel(this);
+        if (wrapper.equalsIgnoreCase("default")) {
+            ctrl.disconnect();
         }
     }
     
@@ -140,80 +138,81 @@ public class PlayerServers extends Plugin {
     
     public void reload() {
         String psCommand = this.psCommand;
-        this.msgMap.clear();
-        this.serverManager.serverMap.clear();
-        this.templateManager.templates.clear();
-        this.loadFiles();
-        this.updateConfig();
-        this.loadConfig();
-        this.vers = "565421"; // Don't modify this!
-        this.loadMsgs();
-        this.loadGUIs();
-        this.loadServers();
-        this.templateManager.loadTemplates();
-        this.utils.vCheck();
-        this.sender.reSyncAll();
-        if (!this.psCommand.equalsIgnoreCase(psCommand)) {
-            this.proxy.getPluginManager().unregisterCommands(this);
-            this.proxy.getPluginManager().registerCommand(this, new PlayerServerCMD(this, this.psCommand));
-            this.proxy.getPluginManager().registerCommand(this, new PlayerServerAdmin(this));
+        msgMap.clear();
+        serverManager.serverMap.clear();
+        templateManager.templates.clear();
+        loadFiles();
+        updateConfig();
+        loadConfig();
+        vers = "565421"; // Don't modify this!
+        loadMsgs();
+        loadGUIs();
+        loadServers();
+        clearOnlineServers();
+        templateManager.loadTemplates();
+        utils.vCheck();
+        sender.reSyncAll();
+        if (!psCommand.equalsIgnoreCase(psCommand)) {
+            proxy.getPluginManager().unregisterCommands(this);
+            proxy.getPluginManager().registerCommand(this, new PlayerServerCMD(this, psCommand));
+            proxy.getPluginManager().registerCommand(this, new PlayerServerAdmin(this));
         }
-        if (this.ctrl == null && this.wrapper.equalsIgnoreCase("default")) {
-            this.proxy.getScheduler().runAsync(this, (this.ctrl = new Controller(this)));
+        if (ctrl == null && wrapper.equalsIgnoreCase("default")) {
+            proxy.getScheduler().runAsync(this, (ctrl = new Controller(this)));
         }
-        else if (this.ctrl == null && this.wrapper.equalsIgnoreCase("remote")) {
-            (this.ctrl = new Controller(this)).setAddress(this.wrapperAddress);
-            this.proxy.getScheduler().runAsync(this, this.ctrl);
+        else if (ctrl == null && wrapper.equalsIgnoreCase("remote")) {
+            (ctrl = new Controller(this)).setAddress(wrapperAddress);
+            proxy.getScheduler().runAsync(this, ctrl);
         }
-        this.onlineMode = this.proxy.getConfig().isOnlineMode();
+        onlineMode = proxy.getConfig().isOnlineMode();
     }
     
     public void loadFiles() {
-        if (!this.getDataFolder().exists()) {
-            this.getDataFolder().mkdir();
+        if (!getDataFolder().exists()) {
+            getDataFolder().mkdir();
         }
-        File file = new File(this.getDataFolder(), "config.yml");
-        this.copyResource(file);
+        File file = new File(getDataFolder(), "config.yml");
+        copyResource(file);
         try {
-            this.config = this.cfg.load(file);
+            config = cfg.load(file);
         }
         catch (IOException ex) {
-            this.utils.log(Level.SEVERE, "Failed to load config.yml file! Please send this stack trace to the developer.");
+            utils.log(Level.SEVERE, "Failed to load config.yml file! Please send this stack trace to the developer.");
             ex.printStackTrace();
         }
-        File file3 = new File(this.getDataFolder(), "messages.yml");
-        this.copyResource(file3);
+        File file3 = new File(getDataFolder(), "messages.yml");
+        copyResource(file3);
         try {
-            this.messages = this.cfg.load(file3);
+            messages = cfg.load(file3);
         }
         catch (IOException ex3) {
-            this.utils.log(Level.SEVERE, "Failed to load messages.yml file! Please send this stack trace to the developer.");
+            utils.log(Level.SEVERE, "Failed to load messages.yml file! Please send this stack trace to the developer.");
             ex3.printStackTrace();
         }
-        File file4 = new File(this.getDataFolder(), "guis.yml");
-        this.copyResource(file4);
+        File file4 = new File(getDataFolder(), "guis.yml");
+        copyResource(file4);
         try {
-            this.guis = this.cfg.load(file4);
-            this.guiConfig = file4;
+            guis = cfg.load(file4);
+            guiConfig = file4;
         }
         catch (IOException ex5) {
-            this.utils.log(Level.SEVERE, "Failed to load GUIs.yml file! Please send this stack trace to the developer!");
+            utils.log(Level.SEVERE, "Failed to load GUIs.yml file! Please send this stack trace to the developer!");
         }
         
-        File serverFolder = new File(this.getDataFolder() + File.separator + "data" + File.separator + "servers");
-        this.utils.debug("serverDir = " + serverFolder.toString());
+        File serverFolder = new File(getDataFolder() + File.separator + "data" + File.separator + "servers");
+        utils.debug("serverDir = " + serverFolder.toString());
         if (!serverFolder.exists()) {
         	serverFolder.mkdirs();
         }
         
-        File playersFolder = new File(this.getDataFolder() + File.separator + "data" + File.separator + "players");
-        this.utils.debug("playerDir = " + playersFolder.toString());
+        File playersFolder = new File(getDataFolder() + File.separator + "data" + File.separator + "players");
+        utils.debug("playerDir = " + playersFolder.toString());
         if (!playersFolder.exists()) {
         	playersFolder.mkdirs();
         }
         
-        File server = new File(this.getDataFolder() + File.separator + "servers");
-        this.utils.debug("serverDir = " + file.toString());
+        File server = new File(getDataFolder() + File.separator + "servers");
+        utils.debug("serverDir = " + file.toString());
         if (!server.exists()) {
         	server.mkdir();
         }
@@ -221,179 +220,179 @@ public class PlayerServers extends Plugin {
     
     public void updateConfig() {
     	boolean changed = false;
-        if (this.config.getStringList("blocked-commands") == null || this.config.getStringList("blocked-commands").isEmpty()) {
-            this.config.set("blocked-commands", new String[] { "^(/execute(.*)|/)(minecraft:)(ban(-ip)?|pardon(-ip)?|stop|reload)($|\\s.*)?" });
-            this.utils.log("Added missing blocked-commands config option to the config.");
+        if (config.getStringList("blocked-commands") == null || config.getStringList("blocked-commands").isEmpty()) {
+            config.set("blocked-commands", new String[] { "^(/execute(.*)|/)(minecraft:)(ban(-ip)?|pardon(-ip)?|stop|reload)($|\\s.*)?" });
+            utils.log("Added missing blocked-commands config option to the config.");
             changed = true;
         }
-        if (this.config.getString("ps-custom-command") == null || this.config.getString("ps-custom-command").isEmpty()) {
-            this.config.set("ps-custom-command", "/playerserver");
-            this.utils.log("Added missing ps-custom-command config option to the config.");
+        if (config.getString("ps-custom-command") == null || config.getString("ps-custom-command").isEmpty()) {
+            config.set("ps-custom-command", "/playerserver");
+            utils.log("Added missing ps-custom-command config option to the config.");
             changed = true;
         }
-        if (this.config.get("global-max-RAM") == null) {
-            this.config.set("global-max-RAM", (-1));
-            this.utils.log("Added missing global-max-RAM config option to the config.");
+        if (config.get("global-max-RAM") == null) {
+            config.set("global-max-RAM", (-1));
+            utils.log("Added missing global-max-RAM config option to the config.");
             changed = true;
         }
-        if (this.config.get("global-max-servers") == null || this.config.getInt("global-max-servers") < -1) {
-            this.config.set("global-max-servers", (-1));
-            this.utils.log("Added missing global-max-servers config option to the config.");
+        if (config.get("global-max-servers") == null || config.getInt("global-max-servers") < -1) {
+            config.set("global-max-servers", (-1));
+            utils.log("Added missing global-max-servers config option to the config.");
             changed = true;
         }
-        if (this.config.get("always-op") == null) {
-            this.config.set("always-op", Arrays.asList("Notch", "069a79f4-44e9-4726-a5be-fca90e38aaf5"));
-            this.utils.log("Added default always-op list to existing config.");
+        if (config.get("always-op") == null) {
+            config.set("always-op", Arrays.asList("Notch", "069a79f4-44e9-4726-a5be-fca90e38aaf5"));
+            utils.log("Added default always-op list to existing config.");
             changed = true;
         }
-        if (this.config.get("reset-expiry-on-create") == null) {
-            this.config.set("reset-expiry-on-create", false);
-            this.utils.log("Added default reset-expiry-on-create to existing config.");
+        if (config.get("reset-expiry-on-create") == null) {
+            config.set("reset-expiry-on-create", false);
+            utils.log("Added default reset-expiry-on-create to existing config.");
             changed = true;
         }
-        if (this.config.get("use-titles") == null) {
-            this.config.set("use-titles", true);
-            this.utils.log("Added default use-titles to existing config.");
+        if (config.get("use-titles") == null) {
+            config.set("use-titles", true);
+            utils.log("Added default use-titles to existing config.");
             changed = true;
         }
-        if (this.config.get("purge-servers") == null) {
-            this.config.set("purge-servers", false);
-            this.utils.log("Added default purge-servers to existing config.");
+        if (config.get("purge-servers") == null) {
+            config.set("purge-servers", false);
+            utils.log("Added default purge-servers to existing config.");
             changed = true;
         }
-        if (this.config.get("purge-after") == null) {
-            this.config.set("purge-after", "30 days");
-            this.utils.log("Added default purge-after to existing config.");
+        if (config.get("purge-after") == null) {
+            config.set("purge-after", "30 days");
+            utils.log("Added default purge-after to existing config.");
             changed = true;
         }
-        if (this.config.get("purge-interval") == null) {
-            this.config.set("purge-interval", "6 hours");
-            this.utils.log("Added default purge-interval to existing config.");
+        if (config.get("purge-interval") == null) {
+            config.set("purge-interval", "6 hours");
+            utils.log("Added default purge-interval to existing config.");
             changed = true;
         }
-        if (this.config.get("wrapper") == null) {
-            this.config.set("wrapper", "screen");
-            this.utils.log("Added screen as 'wrapper' to existing config.");
+        if (config.get("wrapper") == null) {
+            config.set("wrapper", "screen");
+            utils.log("Added screen as 'wrapper' to existing config.");
             changed = true;
         }
-        if (this.config.get("wrapper-control-address") == null) {
-            this.config.set("wrapper-control-address", "localhost");
-            this.utils.log("Added default wrapper-control-address to existing config.");
+        if (config.get("wrapper-control-address") == null) {
+            config.set("wrapper-control-address", "localhost");
+            utils.log("Added default wrapper-control-address to existing config.");
             changed = true;
         }
-        if (this.config.get("wrapper-control-port") == null) {
-            this.config.set("wrapper-control-port", 5155);
-            this.utils.log("Added default wrapper-control-port to existing config.");
+        if (config.get("wrapper-control-port") == null) {
+            config.set("wrapper-control-port", 5155);
+            utils.log("Added default wrapper-control-port to existing config.");
             changed = true;
         }
-        if (this.config.get("online-join-delay") == null) {
-            this.config.set("online-join-delay", 3);
-            this.utils.log("Added default online-join-delay to existing config.");
-            this.saveConfig(this.config, "config.yml");
+        if (config.get("online-join-delay") == null) {
+            config.set("online-join-delay", 3);
+            utils.log("Added default online-join-delay to existing config.");
+            saveConfig(config, "config.yml");
         }
-        if (this.config.get("use-startup-queue") == null) {
-            this.config.set("use-startup-queue", true);
-            this.utils.log("Added default use-startup-queue to existing config.");
+        if (config.get("use-startup-queue") == null) {
+            config.set("use-startup-queue", true);
+            utils.log("Added default use-startup-queue to existing config.");
             changed = true;
         }
         if (changed) {
-        	this.saveConfig(this.config, "config.yml");
+        	saveConfig(config, "config.yml");
         }
     }
     
     public void saveConfig(Configuration configuration, String s) {
-        File file = new File(this.getDataFolder(), s);
+        File file = new File(getDataFolder(), s);
         try {
-            this.cfg.save(configuration, file);
+            cfg.save(configuration, file);
         }
         catch (IOException ex) {
-            this.utils.log(Level.SEVERE, "Failed to save the file " + file.getPath() + ", please send this stack trace to the developer.");
+            utils.log(Level.SEVERE, "Failed to save the file " + file.getPath() + ", please send this stack trace to the developer.");
             ex.printStackTrace();
         }
     }
     
     public void loadConfig() {
-        this.debug = this.config.getBoolean("debug", false);
-        this.psCommand = this.config.getString("ps-custom-command", "playerserver");
-        if (this.psCommand.startsWith("/")) {
-            this.psCommand = this.psCommand.substring(1);
+        debug = config.getBoolean("debug", false);
+        psCommand = config.getString("ps-custom-command", "playerserver");
+        if (psCommand.startsWith("/")) {
+            psCommand = psCommand.substring(1);
         }
-        this.blockedCmds = (List<String>)this.config.getStringList("blocked-commands");
-        this.useExpiry = this.config.getBoolean("use-expire-dates", true);
-        this.utils.debug("use-expire-dates: " + this.useExpiry);
-        this.prefix = this.config.getString("prefix", "&b&oPlayrSrv &7&o�&f");
-        this.utils.debug("prefix: " + this.prefix);
-        if (this.config.getString("hub-server") == null || this.config.getString("hub-server").equals("default")) {
-            ConfigurationAdapter configurationAdapter = this.proxy.getConfigurationAdapter();
+        blockedCmds = (List<String>)config.getStringList("blocked-commands");
+        useExpiry = config.getBoolean("use-expire-dates", true);
+        utils.debug("use-expire-dates: " + useExpiry);
+        prefix = config.getString("prefix", "&b&oPlayrSrv &7&o�&f");
+        utils.debug("prefix: " + prefix);
+        if (config.getString("hub-server") == null || config.getString("hub-server").equals("default")) {
+            ConfigurationAdapter configurationAdapter = proxy.getConfigurationAdapter();
             String s = "default_server";
-            this.fallbackSrv = configurationAdapter.getString(s, this.proxy.getServers().values().iterator().next().getName());
+            fallbackSrv = configurationAdapter.getString(s, proxy.getServers().values().iterator().next().getName());
         }
         else {
-            this.fallbackSrv = this.config.getString("hub-server");
+            fallbackSrv = config.getString("hub-server");
         }
-        this.utils.debug("hub-server: " + this.fallbackSrv);
-        if (this.config.getString("servers-folder").equals("default")) {
-            this.serversFolder = this.getDataFolder().getAbsolutePath() + File.separator + "servers";
-        }
-        else {
-            this.serversFolder = this.config.getString("servers-folder");
-        }
-        this.utils.debug("servers-folder: " + this.serversFolder);
-        this.downloadsPort = this.config.getInt("downloads-port", 8080);
-        this.utils.debug("downloads-port: " + this.downloadsPort);
-        this.joinDelay = this.config.getInt("startup-join-delay", 10);
-        this.onlineJoinDelay = this.config.getInt("online-join-delay", 3);
-        this.utils.debug("config max servers = " + this.config.get("global-max-servers") + " | class =" + this.config.get("global-max-servers").getClass());
-        this.globalMaxServers = this.config.getInt("global-max-servers");
-        this.utils.debug("global-max-servers = " + this.globalMaxServers);
-        if (this.config.get("global-max-RAM") instanceof Integer) {
-            this.globalMaxRam = this.config.getInt("global-max-RAM");
+        utils.debug("hub-server: " + fallbackSrv);
+        if (config.getString("servers-folder").equals("default")) {
+            serversFolder = getDataFolder().getAbsolutePath() + File.separator + "servers";
         }
         else {
-            this.globalMaxRam = this.utils.memStringToInt(this.config.getString("global-max-RAM"));
+            serversFolder = config.getString("servers-folder");
         }
-        this.utils.debug("global-max-RAM = " + this.globalMaxRam);
-        this.alwaysOP = (List<String>)this.config.getStringList("always-op");
-        this.resetExpiry = this.config.getBoolean("reset-expiry-on-create");
-        this.utils.debug("reset-expiry-on-create = " + this.resetExpiry);
-        this.useTitles = this.config.getBoolean("use-titles");
-        this.utils.debug("use-titles = " + this.useTitles);
-        this.autoPurge = this.config.getBoolean("purge-servers");
-        this.utils.debug("purge-servers = " + this.autoPurge);
-        this.autoPurgeTime = this.expiryTracker.stringToMillis(this.config.getString("purge-after"));
-        this.utils.debug("purge-after in milliseconds = " + this.autoPurgeTime);
-        this.autoPurgeInterval = this.expiryTracker.stringToMillis(this.config.getString("purge-interval"));
-        this.utils.debug("purge-interval in milliseconds = " + this.autoPurgeInterval);
-        this.wrapper = this.config.getString("wrapper");
-        if (this.wrapper.matches("(?i)(scr(e*)n)")) {
-            this.wrapper = "screen";
-        }
-        else if (this.wrapper.matches("(?i)(tm(u)?x)")) {
-            this.wrapper = "tmux";
-        }
-        else if (this.wrapper.matches("(?i)(r(e)?m(o)?t(e)?)")) {
-            this.wrapper = "remote";
+        utils.debug("servers-folder: " + serversFolder);
+        downloadsPort = config.getInt("downloads-port", 8080);
+        utils.debug("downloads-port: " + downloadsPort);
+        joinDelay = config.getInt("startup-join-delay", 10);
+        onlineJoinDelay = config.getInt("online-join-delay", 3);
+        utils.debug("config max servers = " + config.get("global-max-servers") + " | class =" + config.get("global-max-servers").getClass());
+        globalMaxServers = config.getInt("global-max-servers");
+        utils.debug("global-max-servers = " + globalMaxServers);
+        if (config.get("global-max-RAM") instanceof Integer) {
+            globalMaxRam = config.getInt("global-max-RAM");
         }
         else {
-            this.wrapper = "default";
+            globalMaxRam = utils.memStringToInt(config.getString("global-max-RAM"));
         }
-        this.utils.debug("wrapper = " + this.wrapper);
-        this.wrapperPort = this.config.getInt("wrapper-control-port");
-        this.utils.debug("wrapper-control-port = " + this.wrapperPort);
-        this.wrapperAddress = (this.wrapper == "default") ? "127.0.0.1" : this.config.getString("wrapper-control-address");
-        this.utils.debug("wrapper-control-address = " + this.wrapperAddress);
-        this.useQueue = this.config.getBoolean("use-startup-queue");
-        this.utils.debug("use-startup-queue = " + this.useQueue);
+        utils.debug("global-max-RAM = " + globalMaxRam);
+        alwaysOP = (List<String>)config.getStringList("always-op");
+        resetExpiry = config.getBoolean("reset-expiry-on-create");
+        utils.debug("reset-expiry-on-create = " + resetExpiry);
+        useTitles = config.getBoolean("use-titles");
+        utils.debug("use-titles = " + useTitles);
+        autoPurge = config.getBoolean("purge-servers");
+        utils.debug("purge-servers = " + autoPurge);
+        autoPurgeTime = expiryTracker.stringToMillis(config.getString("purge-after"));
+        utils.debug("purge-after in milliseconds = " + autoPurgeTime);
+        autoPurgeInterval = expiryTracker.stringToMillis(config.getString("purge-interval"));
+        utils.debug("purge-interval in milliseconds = " + autoPurgeInterval);
+        wrapper = config.getString("wrapper");
+        if (wrapper.matches("(?i)(scr(e*)n)")) {
+            wrapper = "screen";
+        }
+        else if (wrapper.matches("(?i)(tm(u)?x)")) {
+            wrapper = "tmux";
+        }
+        else if (wrapper.matches("(?i)(r(e)?m(o)?t(e)?)")) {
+            wrapper = "remote";
+        }
+        else {
+            wrapper = "default";
+        }
+        utils.debug("wrapper = " + wrapper);
+        wrapperPort = config.getInt("wrapper-control-port");
+        utils.debug("wrapper-control-port = " + wrapperPort);
+        wrapperAddress = (wrapper == "default") ? "127.0.0.1" : config.getString("wrapper-control-address");
+        utils.debug("wrapper-control-address = " + wrapperAddress);
+        useQueue = config.getBoolean("use-startup-queue");
+        utils.debug("use-startup-queue = " + useQueue);
     }
     
     public void loadGUIs() {
-        this.updateGUIs();
+        updateGUIs();
         
-        this.sender.guisSerialized = YamlToJson().toString();
+        sender.guisSerialized = YamlToJson().toString();
     }
     
     private String YamlToJson() {
-    	try (InputStream inputStream = new FileInputStream(this.guiConfig)) {
+    	try (InputStream inputStream = new FileInputStream(guiConfig)) {
             Yaml yaml = new Yaml();
             Map<String, Object> yamlData = yaml.load(inputStream);
             ObjectMapper jsonMapper = new ObjectMapper();
@@ -409,20 +408,20 @@ public class PlayerServers extends Plugin {
     
     public void updateGUIs() {
         boolean b = false;
-        if (this.guis.get("settings-icons") instanceof HashMap && ((HashMap)this.guis.get("settings-icons")).get("expire-tracker") == null) {
+        if (guis.get("settings-icons") instanceof HashMap && ((HashMap)guis.get("settings-icons")).get("expire-tracker") == null) {
             HashMap<String, String> hashMap = new HashMap<String, String>();
             hashMap.put("item-id", "clock");
             hashMap.put("item-name", "&e&o&lTime Until Server Expires:");
             hashMap.put("item-lore", "Time Left: %time-left%||Expire Date: %expire-date%");
-            this.utils.debug("updating GUI: settings with expire-tracker: " + hashMap.toString());
-            ((HashMap)this.guis.get("settings-icons")).put("expire-tracker", hashMap);
+            utils.debug("updating GUI: settings with expire-tracker: " + hashMap.toString());
+            ((HashMap)guis.get("settings-icons")).put("expire-tracker", hashMap);
             b = true;
         }
-        if (this.guis.get("control-title") == null) {
-            this.guis.set("control-title", "&5&lPS Control &0&l�");
+        if (guis.get("control-title") == null) {
+            guis.set("control-title", "&5&lPS Control &0&l�");
             b = true;
         }
-        if (this.guis.get("control-icons") == null) {
+        if (guis.get("control-icons") == null) {
             HashMap<String, HashMap> hashMap2 = new HashMap<String, HashMap>();
             HashMap<String, String> hashMap3 = new HashMap<String, String>();
             hashMap3.put("item-id", "clock");
@@ -464,193 +463,193 @@ public class PlayerServers extends Plugin {
             hashMap10.put("item-name", "&c&lLeave Your Server");
             hashMap10.put("item-lore", "Click to leave your server!");
             hashMap2.put("leave-server", (HashMap)hashMap10.clone());
-            this.guis.set("control-icons", hashMap2);
+            guis.set("control-icons", hashMap2);
             b = true;
         }
-        if (this.guis.get("servers-icons.server.item-lore").equals("Click to join this Player Server.")) {
-            this.guis.set("servers-icons.server.item-lore", "Owner: %player%||Players: %current-players%/%max-players%||UUID: %player-uuid%||MOTD: %motd%||Template: %template-name%||Expire Date: %expire-date%||Time Left: %time-left%||Whitelist: %whitelist%");
+        if (guis.get("servers-icons.server.item-lore").equals("Click to join this Player Server.")) {
+            guis.set("servers-icons.server.item-lore", "Owner: %player%||Players: %current-players%/%max-players%||UUID: %player-uuid%||MOTD: %motd%||Template: %template-name%||Expire Date: %expire-date%||Time Left: %time-left%||Whitelist: %whitelist%");
             b = true;
         }
         if (b) {
-            this.saveConfig(this.guis, "guis.yml");
-            this.utils.debug("Saved updated guis.yml file.");
+            saveConfig(guis, "guis.yml");
+            utils.debug("Saved updated guis.yml file.");
         }
     }
     
     public void loadMsgs() {
-        this.utils.debug("messages class: " + this.messages.get("messages").getClass());
-        this.msgMap.put("no-permissions",  this.messages.get("messages.no-permissions").toString());
-        this.msgMap.put("no-server", this.messages.get("messages.no-server").toString());
-        this.msgMap.put("other-no-server", this.messages.get("messages.other-no-server").toString());
-        this.msgMap.put("not-player-server", this.messages.get("messages.not-player-server").toString());
-        this.msgMap.put("no-player-specified", this.messages.get("messages.no-player-specified").toString());
-        this.msgMap.put("no-value-specified", this.messages.get("messages.no-value-specified").toString());
-        this.msgMap.put("only-player-use", this.messages.get("messages.only-player-use").toString());
-        this.msgMap.put("have-server", this.messages.get("messages.have-server").toString());
-        this.msgMap.put("other-have-server", this.messages.get("messages.other-have-server").toString());
-        this.msgMap.put("sent-fallback", this.messages.get("messages.sent-fallback").toString());
-        this.msgMap.put("blocked-cmd", this.messages.get("messages.blocked-cmd").toString());
-        this.msgMap.put("recently-started", this.messages.get("messages.recently-started").toString());
-        this.msgMap.put("server-expired", this.messages.get("messages.server-expired").toString());
-        this.msgMap.put("create-start", this.messages.get("messages.create-start").toString());
-        this.msgMap.put("create-finished", this.messages.get("messages.create-finished").toString());
-        this.msgMap.put("create-copying-files", this.messages.get("messages.create-copying-files").toString());
-        this.msgMap.put("create-failed-copy", this.messages.get("messages.create-failed-copy").toString());
-        this.msgMap.put("create-missing-template", this.messages.get("messages.create-missing-template").toString());
-        this.msgMap.put("expire-times", this.messages.get("messages.expire-times").toString());
-        this.msgMap.put("others-expire-times", this.messages.get("messages.others-expire-times").toString());
-        this.msgMap.put("check-expire-times", this.messages.get("messages.check-expire-times").toString());
-        this.msgMap.put("check-expire-unlimited", this.messages.get("messages.check-expire-unlimited").toString());
-        this.msgMap.put("days-left", this.messages.get("messages.days-left").toString());
-        this.msgMap.put("not-enough-time", this.messages.get("messages.not-enough-time").toString());
-        this.msgMap.put("no-share-unlimited", this.messages.get("messages.no-share-unlimited").toString());
-        this.msgMap.put("other-days-left", this.messages.get("messages.other-days-left").toString());
-        this.msgMap.put("other-removed-days", this.messages.get("messages.other-removed-days").toString());
-        this.msgMap.put("other-added-days", this.messages.get("messages.other-added-days").toString());
-        this.msgMap.put("invalid-time-unit", this.messages.get("messages.invalid-time-unit").toString());
-        this.msgMap.put("delete-warning", this.messages.get("messages.delete-warning").toString());
-        this.msgMap.put("start-delete", this.messages.get("messages.start-delete").toString());
-        this.msgMap.put("finish-delete", this.messages.get("messages.finish-delete").toString());
-        this.msgMap.put("finish-delete-problem", this.messages.get("messages.finish-delete-problem").toString());
-        this.msgMap.put("other-server-already-online", this.messages.get("messages.other-server-already-online").toString());
-        this.msgMap.put("server-already-online", this.messages.get("messages.server-already-online").toString());
-        this.msgMap.put("stopping-all-servers", this.messages.get("messages.stopping-all-servers").toString());
-        this.msgMap.put("server-join-online-owner", this.messages.get("messages.server-join-online-owner").toString());
-        this.msgMap.put("server-join-online-guest", this.messages.get("messages.server-join-online-guest").toString());
-        this.msgMap.put("server-join-offline-owner", this.messages.get("messages.server-join-offline-owner").toString());
-        this.msgMap.put("server-join-offline-guest", this.messages.get("messages.server-join-offline-guest").toString());
-        this.msgMap.put("server-stop-online-owner", this.messages.get("messages.server-stop-online-owner").toString());
-        this.msgMap.put("server-stop-online-guest", this.messages.get("messages.server-stop-online-guest").toString());
-        this.msgMap.put("server-stop-offline-owner", this.messages.get("messages.server-stop-offline-owner").toString());
-        this.msgMap.put("server-stop-offline-guest", this.messages.get("messages.server-stop-offline-guest").toString());
-        this.msgMap.put("other-server-not-online", this.messages.get("messages.other-server-not-online").toString());
-        this.msgMap.put("other-started-server", this.messages.get("messages.other-started-server").toString());
-        this.msgMap.put("other-stopping-server", this.messages.get("messages.other-stopping-server").toString());
-        this.msgMap.put("got-kicked", this.messages.get("messages.got-kicked").toString());
-        this.msgMap.put("got-banned", this.messages.get("messages.got-banned").toString());
-        this.msgMap.put("config-reloaded", this.messages.get("messages.config-reloaded").toString());
-        this.msgMap.put("max-memory-changed", this.messages.get("messages.max-memory-changed").toString());
-        this.msgMap.put("start-memory-changed", this.messages.get("messages.start-memory-changed").toString());
-        this.msgMap.put("max-players-count", this.messages.get("messages.max-players-count").toString());
-        this.msgMap.put("invalid-memory-format", this.messages.get("messages.invalid-memory-format").toString());
-        this.msgMap.put("invalid-slot-count", this.messages.get("messages.invalid-slot-count").toString());
-        this.msgMap.put("start-greater-max", this.messages.get("messages.start-greater-max").toString());
-        this.msgMap.put("max-lessthan-start", this.messages.get("messages.max-lessthan-start").toString());
-        this.msgMap.put("player-never-joined", this.messages.get("messages.player-never-joined").toString());
-        this.msgMap.put("no-template-specified", this.messages.get("messages.no-template-specified").toString());
-        this.msgMap.put("template-doesnt-exist", this.messages.get("messages.template-doesnt-exist").toString());
-        this.msgMap.put("no-templates-found", this.messages.get("messages.no-templates-found").toString());
-        this.msgMap.put("available-templates", this.messages.get("messages.available-templates").toString());
-        this.msgMap.put("no-template-permissions", this.messages.get("messages.no-template-permissions").toString());
-        this.msgMap.put("max-memory-reached", this.messages.get("messages.max-memory-reached").toString());
-        this.msgMap.put("max-servers-reached", this.messages.get("messages.max-servers-reached").toString());
-        this.msgMap.put("added-to-queue", this.messages.get("messages.added-to-queue").toString());
-        this.msgMap.put("removed-from-queue", this.messages.get("messages.removed-from-queue").toString());
-        this.msgMap.put("queue-startup", this.messages.get("messages.queue-startup").toString());
-        this.msgMap.put("gamemode-changed", this.messages.get("messages.gamemode-changed").toString());
-        this.msgMap.put("force-gamemode-on", this.messages.get("messages.force-gamemode-on").toString());
-        this.msgMap.put("force-gamemode-off", this.messages.get("messages.force-gamemode-off").toString());
-        this.msgMap.put("difficulty-changed", this.messages.get("messages.difficulty-changed").toString());
-        this.msgMap.put("whitelist-add-timeout", this.messages.get("messages.whitelist-add-timeout").toString());
-        this.msgMap.put("whitelist-add-cancelled", this.messages.get("messages.whitelist-add-cancelled").toString());
-        this.msgMap.put("whitelist-modify-instructions", this.messages.get("messages.whitelist-modify-instructions").toString());
-        this.msgMap.put("whitelist-cleared", this.messages.get("messages.whitelist-cleared").toString());
-        this.msgMap.put("whitelist-added", this.messages.get("messages.whitelist-added").toString());
-        this.msgMap.put("whitelist-removed", this.messages.get("messages.whitelist-removed").toString());
-        this.msgMap.put("whitelist-enabled", this.messages.get("messages.whitelist-enabled").toString());
-        this.msgMap.put("whitelist-disabled", this.messages.get("messages.whitelist-disabled").toString());
-        this.msgMap.put("monster-spawns-on", this.messages.get("messages.monster-spawns-on").toString());
-        this.msgMap.put("monster-spawns-off", this.messages.get("messages.monster-spawns-off").toString());
-        this.msgMap.put("animal-spawns-on", this.messages.get("messages.animal-spawns-on").toString());
-        this.msgMap.put("animal-spawns-off", this.messages.get("messages.animal-spawns-off").toString());
-        this.msgMap.put("npc-spawns-on", this.messages.get("messages.npc-spawns-on").toString());
-        this.msgMap.put("npc-spawns-off", this.messages.get("messages.npc-spawns-off").toString());
-        this.msgMap.put("allow-nether-on", this.messages.get("messages.allow-nether-on").toString());
-        this.msgMap.put("allow-nether-off", this.messages.get("messages.allow-nether-off").toString());
-        this.msgMap.put("allow-flight-on", this.messages.get("messages.allow-flight-on").toString());
-        this.msgMap.put("allow-flight-off", this.messages.get("messages.allow-flight-off").toString());
-        this.msgMap.put("generate-structures-on", this.messages.get("messages.generate-structures-on").toString());
-        this.msgMap.put("generate-structures-off", this.messages.get("messages.generate-structures-off").toString());
-        this.msgMap.put("kicked-player", this.messages.get("messages.kicked-player").toString());
-        this.msgMap.put("got-kicked", this.messages.get("messages.got-kicked").toString());
-        this.msgMap.put("banned-player", this.messages.get("messages.banned-player").toString());
-        this.msgMap.put("unbanned-player", this.messages.get("messages.unbanned-player").toString());
-        this.msgMap.put("got-banned", this.messages.get("messages.got-banned").toString());
-        this.msgMap.put("ban-message", this.messages.get("messages.ban-message").toString());
-        this.msgMap.put("pvp-enabled", this.messages.get("messages.pvp-enabled").toString());
-        this.msgMap.put("pvp-disabled", this.messages.get("messages.pvp-disabled").toString());
-        this.msgMap.put("regain-info", this.messages.get("messages.regain-info").toString());
-        this.msgMap.put("opped-player", this.messages.get("messages.opped-player").toString());
-        this.msgMap.put("deopped-player", this.messages.get("messages.deopped-player").toString());
-        this.msgMap.put("must-be-online", this.messages.get("messages.must-be-online").toString());
-        this.msgMap.put("leave-message", this.messages.get("messages.leave-message").toString());
-        this.msgMap.put("motd-display", this.messages.get("messages.motd-display").toString());
-        this.msgMap.put("motd-changed", this.messages.get("messages.motd-changed").toString());
-        this.msgMap.put("motd-too-long", this.messages.get("messages.motd-too-long").toString());
-        this.msgMap.put("server-join-online-guest-title", this.messages.get("messages.server-join-online-guest-title").toString());
-        this.msgMap.put("server-join-offline-guest-title", this.messages.get("messages.server-join-offline-guest-title").toString());
-        this.msgMap.put("server-join-online-owner-title", this.messages.get("messages.server-join-online-owner-title").toString());
-        this.msgMap.put("server-join-offline-owner-title", this.messages.get("messages.server-join-offline-owner-title").toString());
-        this.msgMap.put("server-stop-online-owner-title", this.messages.get("messages.server-stop-online-owner-title").toString());
-        this.msgMap.put("server-stop-online-guest-title", this.messages.get("messages.server-stop-online-guest-title").toString());
-        this.msgMap.put("server-stop-offline-owner-title", this.messages.get("messages.server-stop-offline-owner-title").toString());
-        this.msgMap.put("server-stop-offline-guest-title", this.messages.get("messages.server-stop-offline-guest-title").toString());
-        this.msgMap.put("other-server-not-online-title", this.messages.get("messages.other-server-not-online-title").toString());
-        this.msgMap.put("no-server-title", this.messages.get("messages.no-server-title").toString());
-        this.msgMap.put("other-no-server-title", this.messages.get("messages.other-no-server-title").toString());
-        this.msgMap.put("server-expired-title", this.messages.get("messages.server-expired-title").toString());
-        this.msgMap.put("max-memory-reached-title", this.messages.get("messages.max-memory-reached-title").toString());
-        this.msgMap.put("max-servers-reached-title", this.messages.get("messages.max-servers-reached-title").toString());
-        this.msgMap.put("max-players-count", this.messages.get("messages.max-players-count").toString());
-        this.msgMap.put("no-player-specified-title", this.messages.get("messages.no-player-specified-title").toString());
-        this.msgMap.put("sent-fallback-title", this.messages.get("messages.sent-fallback-title").toString());
-        this.msgMap.put("not-player-server-title", this.messages.get("messages.not-player-server-title").toString());
-        this.msgMap.put("template-doesnt-exist-title", this.messages.get("messages.template-doesnt-exist-title").toString());
-        this.msgMap.put("no-templates-found-title", this.messages.get("messages.no-templates-found-title").toString());
-        this.msgMap.put("create-start-title", this.messages.get("messages.create-start-title").toString());
-        this.msgMap.put("have-server-title", this.messages.get("messages.have-server-title").toString());
-        this.msgMap.put("delete-warning-title", this.messages.get("messages.delete-warning-title").toString());
-        this.msgMap.put("recently-started-title", this.messages.get("messages.recently-started-title").toString());
-        this.msgMap.put("added-to-queue-title", this.messages.get("messages.added-to-queue-title").toString());
-        this.msgMap.put("removed-from-queue-title", this.messages.get("messages.removed-from-queue-title").toString());
-        this.msgMap.put("queue-startup-title", this.messages.get("messages.queue-startup-title").toString());
-        this.msgMap.put("help-ps-header", this.messages.get("messages.help-ps-header").toString());
-        this.msgMap.put("help-ps-join", this.messages.get("messages.help-ps-join").toString());
-        this.msgMap.put("help-ps-leave", this.messages.get("messages.help-ps-leave").toString());
-        this.msgMap.put("help-ps-create", this.messages.get("messages.help-ps-create").toString());
-        this.msgMap.put("help-ps-home", this.messages.get("messages.help-ps-home").toString());
-        this.msgMap.put("help-ps-stop", this.messages.get("messages.help-ps-stop").toString());
-        this.msgMap.put("help-ps-delete", this.messages.get("messages.help-ps-delete").toString());
-        this.msgMap.put("help-ps-motd", this.messages.get("messages.help-ps-motd").toString());
-        this.msgMap.put("help-ps-time", this.messages.get("messages.help-ps-time").toString());
-        this.msgMap.put("help-ps-worlds", this.messages.get("messages.help-ps-worlds").toString());
-        this.msgMap.put("help-ps-sharetime", this.messages.get("messages.help-ps-sharetime").toString());
-        this.msgMap.put("help-psa-header", this.messages.get("messages.help-psa-header").toString());
-        this.msgMap.put("help-psa-create", this.messages.get("messages.help-psa-create").toString());
-        this.msgMap.put("help-psa-templates", this.messages.get("messages.help-psa-templates").toString());
-        this.msgMap.put("help-psa-join", this.messages.get("messages.help-psa-join").toString());
-        this.msgMap.put("help-psa-start", this.messages.get("messages.help-psa-start").toString());
-        this.msgMap.put("help-psa-stop", this.messages.get("messages.help-psa-stop").toString());
-        this.msgMap.put("help-psa-delete", this.messages.get("messages.help-psa-delete").toString());
-        this.msgMap.put("help-psa-stopall", this.messages.get("messages.help-psa-stopall").toString());
-        this.msgMap.put("help-psa-kill", this.messages.get("messages.help-psa-kill").toString());
-        this.msgMap.put("help-psa-addtime", this.messages.get("messages.help-psa-addtime").toString());
-        this.msgMap.put("help-psa-removetime", this.messages.get("messages.help-psa-removetime").toString());
-        this.msgMap.put("help-psa-checktime", this.messages.get("messages.help-psa-checktime").toString());
-        this.msgMap.put("help-psa-maxmem", this.messages.get("messages.help-psa-maxmem").toString());
-        this.msgMap.put("help-psa-startmem", this.messages.get("messages.help-psa-startmem").toString());
-        this.msgMap.put("help-psa-slots", this.messages.get("messages.help-psa-slots").toString());
-        this.msgMap.put("help-psa-reload", this.messages.get("messages.help-psa-reload").toString());
-        this.msgMap.put("help-psa-motd", this.messages.get("messages.help-psa-motd").toString());
-        this.msgMap.put("help-mys-header", this.messages.get("messages.help-mys-header").toString());
-        this.msgMap.put("help-mys-settings", this.messages.get("messages.help-mys-settings").toString());
-        this.msgMap.put("help-mys-ban", this.messages.get("messages.help-mys-ban").toString());
-        this.msgMap.put("help-mys-kick", this.messages.get("messages.help-mys-kick").toString());
-        this.msgMap.put("help-mys-whitelist", this.messages.get("messages.help-mys-whitelist").toString());
-        this.msgMap.put("help-mys-op", this.messages.get("messages.help-mys-op").toString());
-        this.msgMap.put("help-mys-regain", this.messages.get("messages.help-mys-regain").toString());
-        this.msgMap.put("help-mys-stop",  this.messages.get("messages.help-mys-stop").toString());
-        this.updateMsgs();
+        utils.debug("messages class: " + messages.get("messages").getClass());
+        msgMap.put("no-permissions",  messages.get("messages.no-permissions").toString());
+        msgMap.put("no-server", messages.get("messages.no-server").toString());
+        msgMap.put("other-no-server", messages.get("messages.other-no-server").toString());
+        msgMap.put("not-player-server", messages.get("messages.not-player-server").toString());
+        msgMap.put("no-player-specified", messages.get("messages.no-player-specified").toString());
+        msgMap.put("no-value-specified", messages.get("messages.no-value-specified").toString());
+        msgMap.put("only-player-use", messages.get("messages.only-player-use").toString());
+        msgMap.put("have-server", messages.get("messages.have-server").toString());
+        msgMap.put("other-have-server", messages.get("messages.other-have-server").toString());
+        msgMap.put("sent-fallback", messages.get("messages.sent-fallback").toString());
+        msgMap.put("blocked-cmd", messages.get("messages.blocked-cmd").toString());
+        msgMap.put("recently-started", messages.get("messages.recently-started").toString());
+        msgMap.put("server-expired", messages.get("messages.server-expired").toString());
+        msgMap.put("create-start", messages.get("messages.create-start").toString());
+        msgMap.put("create-finished", messages.get("messages.create-finished").toString());
+        msgMap.put("create-copying-files", messages.get("messages.create-copying-files").toString());
+        msgMap.put("create-failed-copy", messages.get("messages.create-failed-copy").toString());
+        msgMap.put("create-missing-template", messages.get("messages.create-missing-template").toString());
+        msgMap.put("expire-times", messages.get("messages.expire-times").toString());
+        msgMap.put("others-expire-times", messages.get("messages.others-expire-times").toString());
+        msgMap.put("check-expire-times", messages.get("messages.check-expire-times").toString());
+        msgMap.put("check-expire-unlimited", messages.get("messages.check-expire-unlimited").toString());
+        msgMap.put("days-left", messages.get("messages.days-left").toString());
+        msgMap.put("not-enough-time", messages.get("messages.not-enough-time").toString());
+        msgMap.put("no-share-unlimited", messages.get("messages.no-share-unlimited").toString());
+        msgMap.put("other-days-left", messages.get("messages.other-days-left").toString());
+        msgMap.put("other-removed-days", messages.get("messages.other-removed-days").toString());
+        msgMap.put("other-added-days", messages.get("messages.other-added-days").toString());
+        msgMap.put("invalid-time-unit", messages.get("messages.invalid-time-unit").toString());
+        msgMap.put("delete-warning", messages.get("messages.delete-warning").toString());
+        msgMap.put("start-delete", messages.get("messages.start-delete").toString());
+        msgMap.put("finish-delete", messages.get("messages.finish-delete").toString());
+        msgMap.put("finish-delete-problem", messages.get("messages.finish-delete-problem").toString());
+        msgMap.put("other-server-already-online", messages.get("messages.other-server-already-online").toString());
+        msgMap.put("server-already-online", messages.get("messages.server-already-online").toString());
+        msgMap.put("stopping-all-servers", messages.get("messages.stopping-all-servers").toString());
+        msgMap.put("server-join-online-owner", messages.get("messages.server-join-online-owner").toString());
+        msgMap.put("server-join-online-guest", messages.get("messages.server-join-online-guest").toString());
+        msgMap.put("server-join-offline-owner", messages.get("messages.server-join-offline-owner").toString());
+        msgMap.put("server-join-offline-guest", messages.get("messages.server-join-offline-guest").toString());
+        msgMap.put("server-stop-online-owner", messages.get("messages.server-stop-online-owner").toString());
+        msgMap.put("server-stop-online-guest", messages.get("messages.server-stop-online-guest").toString());
+        msgMap.put("server-stop-offline-owner", messages.get("messages.server-stop-offline-owner").toString());
+        msgMap.put("server-stop-offline-guest", messages.get("messages.server-stop-offline-guest").toString());
+        msgMap.put("other-server-not-online", messages.get("messages.other-server-not-online").toString());
+        msgMap.put("other-started-server", messages.get("messages.other-started-server").toString());
+        msgMap.put("other-stopping-server", messages.get("messages.other-stopping-server").toString());
+        msgMap.put("got-kicked", messages.get("messages.got-kicked").toString());
+        msgMap.put("got-banned", messages.get("messages.got-banned").toString());
+        msgMap.put("config-reloaded", messages.get("messages.config-reloaded").toString());
+        msgMap.put("max-memory-changed", messages.get("messages.max-memory-changed").toString());
+        msgMap.put("start-memory-changed", messages.get("messages.start-memory-changed").toString());
+        msgMap.put("max-players-count", messages.get("messages.max-players-count").toString());
+        msgMap.put("invalid-memory-format", messages.get("messages.invalid-memory-format").toString());
+        msgMap.put("invalid-slot-count", messages.get("messages.invalid-slot-count").toString());
+        msgMap.put("start-greater-max", messages.get("messages.start-greater-max").toString());
+        msgMap.put("max-lessthan-start", messages.get("messages.max-lessthan-start").toString());
+        msgMap.put("player-never-joined", messages.get("messages.player-never-joined").toString());
+        msgMap.put("no-template-specified", messages.get("messages.no-template-specified").toString());
+        msgMap.put("template-doesnt-exist", messages.get("messages.template-doesnt-exist").toString());
+        msgMap.put("no-templates-found", messages.get("messages.no-templates-found").toString());
+        msgMap.put("available-templates", messages.get("messages.available-templates").toString());
+        msgMap.put("no-template-permissions", messages.get("messages.no-template-permissions").toString());
+        msgMap.put("max-memory-reached", messages.get("messages.max-memory-reached").toString());
+        msgMap.put("max-servers-reached", messages.get("messages.max-servers-reached").toString());
+        msgMap.put("added-to-queue", messages.get("messages.added-to-queue").toString());
+        msgMap.put("removed-from-queue", messages.get("messages.removed-from-queue").toString());
+        msgMap.put("queue-startup", messages.get("messages.queue-startup").toString());
+        msgMap.put("gamemode-changed", messages.get("messages.gamemode-changed").toString());
+        msgMap.put("force-gamemode-on", messages.get("messages.force-gamemode-on").toString());
+        msgMap.put("force-gamemode-off", messages.get("messages.force-gamemode-off").toString());
+        msgMap.put("difficulty-changed", messages.get("messages.difficulty-changed").toString());
+        msgMap.put("whitelist-add-timeout", messages.get("messages.whitelist-add-timeout").toString());
+        msgMap.put("whitelist-add-cancelled", messages.get("messages.whitelist-add-cancelled").toString());
+        msgMap.put("whitelist-modify-instructions", messages.get("messages.whitelist-modify-instructions").toString());
+        msgMap.put("whitelist-cleared", messages.get("messages.whitelist-cleared").toString());
+        msgMap.put("whitelist-added", messages.get("messages.whitelist-added").toString());
+        msgMap.put("whitelist-removed", messages.get("messages.whitelist-removed").toString());
+        msgMap.put("whitelist-enabled", messages.get("messages.whitelist-enabled").toString());
+        msgMap.put("whitelist-disabled", messages.get("messages.whitelist-disabled").toString());
+        msgMap.put("monster-spawns-on", messages.get("messages.monster-spawns-on").toString());
+        msgMap.put("monster-spawns-off", messages.get("messages.monster-spawns-off").toString());
+        msgMap.put("animal-spawns-on", messages.get("messages.animal-spawns-on").toString());
+        msgMap.put("animal-spawns-off", messages.get("messages.animal-spawns-off").toString());
+        msgMap.put("npc-spawns-on", messages.get("messages.npc-spawns-on").toString());
+        msgMap.put("npc-spawns-off", messages.get("messages.npc-spawns-off").toString());
+        msgMap.put("allow-nether-on", messages.get("messages.allow-nether-on").toString());
+        msgMap.put("allow-nether-off", messages.get("messages.allow-nether-off").toString());
+        msgMap.put("allow-flight-on", messages.get("messages.allow-flight-on").toString());
+        msgMap.put("allow-flight-off", messages.get("messages.allow-flight-off").toString());
+        msgMap.put("generate-structures-on", messages.get("messages.generate-structures-on").toString());
+        msgMap.put("generate-structures-off", messages.get("messages.generate-structures-off").toString());
+        msgMap.put("kicked-player", messages.get("messages.kicked-player").toString());
+        msgMap.put("got-kicked", messages.get("messages.got-kicked").toString());
+        msgMap.put("banned-player", messages.get("messages.banned-player").toString());
+        msgMap.put("unbanned-player", messages.get("messages.unbanned-player").toString());
+        msgMap.put("got-banned", messages.get("messages.got-banned").toString());
+        msgMap.put("ban-message", messages.get("messages.ban-message").toString());
+        msgMap.put("pvp-enabled", messages.get("messages.pvp-enabled").toString());
+        msgMap.put("pvp-disabled", messages.get("messages.pvp-disabled").toString());
+        msgMap.put("regain-info", messages.get("messages.regain-info").toString());
+        msgMap.put("opped-player", messages.get("messages.opped-player").toString());
+        msgMap.put("deopped-player", messages.get("messages.deopped-player").toString());
+        msgMap.put("must-be-online", messages.get("messages.must-be-online").toString());
+        msgMap.put("leave-message", messages.get("messages.leave-message").toString());
+        msgMap.put("motd-display", messages.get("messages.motd-display").toString());
+        msgMap.put("motd-changed", messages.get("messages.motd-changed").toString());
+        msgMap.put("motd-too-long", messages.get("messages.motd-too-long").toString());
+        msgMap.put("server-join-online-guest-title", messages.get("messages.server-join-online-guest-title").toString());
+        msgMap.put("server-join-offline-guest-title", messages.get("messages.server-join-offline-guest-title").toString());
+        msgMap.put("server-join-online-owner-title", messages.get("messages.server-join-online-owner-title").toString());
+        msgMap.put("server-join-offline-owner-title", messages.get("messages.server-join-offline-owner-title").toString());
+        msgMap.put("server-stop-online-owner-title", messages.get("messages.server-stop-online-owner-title").toString());
+        msgMap.put("server-stop-online-guest-title", messages.get("messages.server-stop-online-guest-title").toString());
+        msgMap.put("server-stop-offline-owner-title", messages.get("messages.server-stop-offline-owner-title").toString());
+        msgMap.put("server-stop-offline-guest-title", messages.get("messages.server-stop-offline-guest-title").toString());
+        msgMap.put("other-server-not-online-title", messages.get("messages.other-server-not-online-title").toString());
+        msgMap.put("no-server-title", messages.get("messages.no-server-title").toString());
+        msgMap.put("other-no-server-title", messages.get("messages.other-no-server-title").toString());
+        msgMap.put("server-expired-title", messages.get("messages.server-expired-title").toString());
+        msgMap.put("max-memory-reached-title", messages.get("messages.max-memory-reached-title").toString());
+        msgMap.put("max-servers-reached-title", messages.get("messages.max-servers-reached-title").toString());
+        msgMap.put("max-players-count", messages.get("messages.max-players-count").toString());
+        msgMap.put("no-player-specified-title", messages.get("messages.no-player-specified-title").toString());
+        msgMap.put("sent-fallback-title", messages.get("messages.sent-fallback-title").toString());
+        msgMap.put("not-player-server-title", messages.get("messages.not-player-server-title").toString());
+        msgMap.put("template-doesnt-exist-title", messages.get("messages.template-doesnt-exist-title").toString());
+        msgMap.put("no-templates-found-title", messages.get("messages.no-templates-found-title").toString());
+        msgMap.put("create-start-title", messages.get("messages.create-start-title").toString());
+        msgMap.put("have-server-title", messages.get("messages.have-server-title").toString());
+        msgMap.put("delete-warning-title", messages.get("messages.delete-warning-title").toString());
+        msgMap.put("recently-started-title", messages.get("messages.recently-started-title").toString());
+        msgMap.put("added-to-queue-title", messages.get("messages.added-to-queue-title").toString());
+        msgMap.put("removed-from-queue-title", messages.get("messages.removed-from-queue-title").toString());
+        msgMap.put("queue-startup-title", messages.get("messages.queue-startup-title").toString());
+        msgMap.put("help-ps-header", messages.get("messages.help-ps-header").toString());
+        msgMap.put("help-ps-join", messages.get("messages.help-ps-join").toString());
+        msgMap.put("help-ps-leave", messages.get("messages.help-ps-leave").toString());
+        msgMap.put("help-ps-create", messages.get("messages.help-ps-create").toString());
+        msgMap.put("help-ps-home", messages.get("messages.help-ps-home").toString());
+        msgMap.put("help-ps-stop", messages.get("messages.help-ps-stop").toString());
+        msgMap.put("help-ps-delete", messages.get("messages.help-ps-delete").toString());
+        msgMap.put("help-ps-motd", messages.get("messages.help-ps-motd").toString());
+        msgMap.put("help-ps-time", messages.get("messages.help-ps-time").toString());
+        msgMap.put("help-ps-worlds", messages.get("messages.help-ps-worlds").toString());
+        msgMap.put("help-ps-sharetime", messages.get("messages.help-ps-sharetime").toString());
+        msgMap.put("help-psa-header", messages.get("messages.help-psa-header").toString());
+        msgMap.put("help-psa-create", messages.get("messages.help-psa-create").toString());
+        msgMap.put("help-psa-templates", messages.get("messages.help-psa-templates").toString());
+        msgMap.put("help-psa-join", messages.get("messages.help-psa-join").toString());
+        msgMap.put("help-psa-start", messages.get("messages.help-psa-start").toString());
+        msgMap.put("help-psa-stop", messages.get("messages.help-psa-stop").toString());
+        msgMap.put("help-psa-delete", messages.get("messages.help-psa-delete").toString());
+        msgMap.put("help-psa-stopall", messages.get("messages.help-psa-stopall").toString());
+        msgMap.put("help-psa-kill", messages.get("messages.help-psa-kill").toString());
+        msgMap.put("help-psa-addtime", messages.get("messages.help-psa-addtime").toString());
+        msgMap.put("help-psa-removetime", messages.get("messages.help-psa-removetime").toString());
+        msgMap.put("help-psa-checktime", messages.get("messages.help-psa-checktime").toString());
+        msgMap.put("help-psa-maxmem", messages.get("messages.help-psa-maxmem").toString());
+        msgMap.put("help-psa-startmem", messages.get("messages.help-psa-startmem").toString());
+        msgMap.put("help-psa-slots", messages.get("messages.help-psa-slots").toString());
+        msgMap.put("help-psa-reload", messages.get("messages.help-psa-reload").toString());
+        msgMap.put("help-psa-motd", messages.get("messages.help-psa-motd").toString());
+        msgMap.put("help-mys-header", messages.get("messages.help-mys-header").toString());
+        msgMap.put("help-mys-settings", messages.get("messages.help-mys-settings").toString());
+        msgMap.put("help-mys-ban", messages.get("messages.help-mys-ban").toString());
+        msgMap.put("help-mys-kick", messages.get("messages.help-mys-kick").toString());
+        msgMap.put("help-mys-whitelist", messages.get("messages.help-mys-whitelist").toString());
+        msgMap.put("help-mys-op", messages.get("messages.help-mys-op").toString());
+        msgMap.put("help-mys-regain", messages.get("messages.help-mys-regain").toString());
+        msgMap.put("help-mys-stop",  messages.get("messages.help-mys-stop").toString());
+        updateMsgs();
     }
     
     public void updateMsgs() {
@@ -755,7 +754,7 @@ public class PlayerServers extends Plugin {
         hashMap.put("help-mys-op", "OP or deOPs a player on your server.");
         hashMap.put("help-mys-regain", "Wipes OP list and regains control of your server");
         hashMap.put("help-mys-stop", "Stops your server. Restart with &6&l/ps home");
-        hashMap.put("not-enough-time", "&cSorry, you do not have enough time to do this.");
+        hashMap.put("not-enough-time", "&cSorry, you do not have enough time to do ");
         hashMap.put("no-share-unlimited", "&cSorry, you can't share unlimited server time!");
         hashMap.put("server-join-online-guest-title", "&a&o%server-owner%'s server online!||&eSending you now.");
         hashMap.put("server-join-offline-guest-title", "&c&oServer offline!||&eYou need to wait for the player to start it.");
@@ -784,10 +783,10 @@ public class PlayerServers extends Plugin {
         hashMap.put("added-to-queue-title", "&aAdded to queue!||&eYour server will start when a slot is available.");
         hashMap.put("queue-startup-title", "&b&lYou are up next!||&eStarting up %server-owner%'s server.");
         hashMap.put("removed-from-queue-title", "&cRemoved from queue!||&eYou've been removed from the startup queue!");
-        if (this.msgMap.containsKey("recently-started") && this.msgMap.get("recently-started").equalsIgnoreCase("&cYou recently started or stopped your server, please wait a minute.")) {
-            this.msgMap.put("recently-started", "&cYou recently started, stopped, or deleted your server, please wait a minute.");
+        if (msgMap.containsKey("recently-started") && msgMap.get("recently-started").equalsIgnoreCase("&cYou recently started or stopped your server, please wait a minute.")) {
+            msgMap.put("recently-started", "&cYou recently started, stopped, or deleted your server, please wait a minute.");
         }
-        Iterator<Map.Entry<String, String>> iterator = this.msgMap.entrySet().iterator();
+        Iterator<Map.Entry<String, String>> iterator = msgMap.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<String, String> entry = iterator.next();
             String s = entry.getKey();
@@ -796,51 +795,51 @@ public class PlayerServers extends Plugin {
                 s2 = s2.replaceAll("%server-owners%", "%server-owner%");
                 iterator.remove();
                 hashMap.put(s, s2);
-                this.utils.debug(s + ": fixed %server-owner% typo.");
+                utils.debug(s + ": fixed %server-owner% typo.");
             }
             if (s2.matches("(?i)(.*)(%days-changed%)(\\sday(s)?)?(.*)")) {
                 s2 = s2.replaceAll("(?i)(%days-changed%)(\\sday(s)?)?", "%time-changed%");
                 iterator.remove();
                 hashMap.put(s, s2);
-                this.utils.debug(s + ": updated existing %days-changed% placeholders to %time-changed%.");
+                utils.debug(s + ": updated existing %days-changed% placeholders to %time-changed%.");
             }
             if (s2.matches("(?i)(.*)(%days-left%)(\\sday(s)?)?(.*)")) {
                 String replaceAll = s2.replaceAll("(?i)(%days-left%)(\\sday(s)?)?", "%time-left%");
                 iterator.remove();
                 hashMap.put(s, replaceAll);
-                this.utils.debug(s + ": updated existing %days-left% placeholders to %time-left%.");
+                utils.debug(s + ": updated existing %days-left% placeholders to %time-left%.");
             }
         }
         boolean b = false;
         if (hashMap.size() > 0) {
             for (Map.Entry<String, String> entry2 : hashMap.entrySet()) {
-                if (!this.msgMap.containsKey(entry2.getKey().toString())) {
-                    this.msgMap.put(entry2.getKey(), entry2.getValue());
-                    this.utils.debug(entry2.getKey() + ": saved changes.");
+                if (!msgMap.containsKey(entry2.getKey().toString())) {
+                    msgMap.put(entry2.getKey(), entry2.getValue());
+                    utils.debug(entry2.getKey() + ": saved changes.");
                     b = true;
                 }
             }
         }
         if (b) {
-            this.messages.set("messages", this.msgMap);
-            this.saveConfig(this.messages, "messages.yml");
-            this.utils.debug("Saved updated messages.yml file.");
+            messages.set("messages", msgMap);
+            saveConfig(messages, "messages.yml");
+            utils.debug("Saved updated messages.yml file.");
         }
     }
     
     public void loadServers() {
-        File serverFolder = new File(this.getDataFolder() + File.separator + "data" + File.separator + "servers");
-        this.utils.debug("serverDir = " + serverFolder.toString());
+        File serverFolder = new File(getDataFolder() + File.separator + "data" + File.separator + "servers");
+        utils.debug("serverDir = " + serverFolder.toString());
         if (!serverFolder.exists()) {
         	serverFolder.mkdirs();
         }
         if (serverFolder.listFiles() != null) {
         	for (File serverFile : serverFolder.listFiles()) {
     			try {
-    				Configuration data = this.cfg.load(serverFile);
+    				Configuration data = cfg.load(serverFile);
     				if (data.getKeys() != null ) {
     	        		data.getKeys().forEach(server -> {
-    	                	this.serverManager.serverMap.put(server, new PlayerServer(UUID.fromString(server)));
+    	                	serverManager.serverMap.put(server, new PlayerServer(UUID.fromString(server), this));
     	                });
     	            }
     			} catch (IOException e) {
@@ -848,18 +847,18 @@ public class PlayerServers extends Plugin {
     			}
             }
         }
-        this.utils.log(this.serverManager.serverMap.size() + " player servers saved.");
+        utils.log(serverManager.serverMap.size() + " player servers saved.");
     }
     
-    public void loadOnlineServers() {
-        if (!this.getDataFolder().exists()) {
-            this.getDataFolder().mkdir();
+    public void clearOnlineServers() {
+        if (!getDataFolder().exists()) {
+            getDataFolder().mkdir();
         }
-        File file = new File(this.getDataFolder(), "online.yml");
+        File file = new File(getDataFolder(), "online.yml");
         if (!file.exists()) {
             try {
                 file.createNewFile();
-                try (InputStream resourceAsStream = this.getResourceAsStream("online.yml");
+                try (InputStream resourceAsStream = getResourceAsStream("online.yml");
                      FileOutputStream fileOutputStream = new FileOutputStream(file)) {
                     ByteStreams.copy(resourceAsStream, (OutputStream)fileOutputStream);
                 }
@@ -869,13 +868,10 @@ public class PlayerServers extends Plugin {
             }
         }
         try {
-            this.online = this.cfg.load(file);
+            online = cfg.load(file);
             
-            this.online.getSection("servers").getKeys().forEach(s -> {
-        		if (this.serverManager.addedServers != null && !this.serverManager.addedServers.containsKey(s)) {
-        			this.serverManager.addBungee(s, this.online.getString("servers." + s + ".address"), Integer.valueOf(this.online.getString("servers." + s + ".port")), this.online.getString("servers." + s + ".motd"), 1);
-        		}
-            });
+            online.set("servers", new HashMap<>());
+            cfg.save(online, file);
         }
         catch (IOException ex2) {
             ex2.printStackTrace();
@@ -883,8 +879,8 @@ public class PlayerServers extends Plugin {
     }
     
     public void loadPlayer(UUID s, StoredPlayer s2) {
-        this.playerMap.put(s, s2);
-        this.playerMapChanged = true;
+        playerMap.put(s, s2);
+        playerMapChanged = true;
     }
     
     public void copyResource(File file) {
@@ -892,15 +888,15 @@ public class PlayerServers extends Plugin {
             try {
                 file.createNewFile();
                 try {
-                    ByteStreams.copy(this.getResourceAsStream(file.getName()), (OutputStream)new FileOutputStream(file));
+                    ByteStreams.copy(getResourceAsStream(file.getName()), (OutputStream)new FileOutputStream(file));
                 }
                 catch (IOException ex) {
-                    this.utils.log(Level.SEVERE, "Failed to copy the resource file " + file.getPath() + "! Please send this stack trace to the developer.");
+                    utils.log(Level.SEVERE, "Failed to copy the resource file " + file.getPath() + "! Please send this stack trace to the developer.");
                     ex.printStackTrace();
                 }
             }
             catch (IOException ex2) {
-                this.utils.log(Level.SEVERE, "Failed to create the resource file " + file.getPath() + "! Please send this stack trace to the developer.");
+                utils.log(Level.SEVERE, "Failed to create the resource file " + file.getPath() + "! Please send this stack trace to the developer.");
                 ex2.printStackTrace();
             }
         }
@@ -910,12 +906,12 @@ public class PlayerServers extends Plugin {
     	//
     	// Stop being a skript kiddie and code your own plugin >:c
     	//
-        File file = new File(this.getDataFolder() + File.separator + "scripts");
-        this.utils.debug("scriptsDir = " + file.toString());
+        File file = new File(getDataFolder() + File.separator + "scripts");
+        utils.debug("scriptsDir = " + file.toString());
         if (!file.exists()) {
             file.mkdir();
         }
-        this.copyResource(new File(this.getDataFolder(), "scripts" + File.separator + "PSWrapper.jar"));
+        copyResource(new File(getDataFolder(), "scripts" + File.separator + "PSWrapper.jar"));
     }
     
     public static PlayerServersAPI getApi() {

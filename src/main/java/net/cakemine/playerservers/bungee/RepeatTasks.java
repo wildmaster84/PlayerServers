@@ -2,6 +2,8 @@ package net.cakemine.playerservers.bungee;
 
 import net.md_5.bungee.api.config.*;
 import net.cakemine.playerservers.bungee.commands.*;
+import net.cakemine.playerservers.bungee.objects.PlayerServer.Status;
+
 import java.util.logging.*;
 import java.util.*;
 import java.util.Map.Entry;
@@ -20,7 +22,7 @@ public class RepeatTasks implements Runnable
     @Override
     public void run() {
         try {
-            if (this.pl.ctrl != null && !this.pl.ctrl.getSocket().isClosed()) {
+            if (this.pl.ctrl != null && this.pl.ctrl.getSocket().isOpen()) {
                 this.pl.ctrl.send("+heartbeat " + System.currentTimeMillis());
             }
             ArrayList<String> list = new ArrayList<String>();
@@ -36,7 +38,7 @@ public class RepeatTasks implements Runnable
                     if (!this.pl.utils.isPortOpen(this.pl.utils.getSrvIp(ownerId), port) || ownerId == null || PlayerServerCMD.chill.contains(ownerId) || n <= 90000L) {
                         continue;
                     }
-                    this.pl.running.remove(ownerId);
+                    pl.serverManager.serverMap.get(ownerId.toString()).setStatus(Status.STOPPED);
                     list.add(string);
                 }
             }

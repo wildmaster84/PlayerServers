@@ -3,8 +3,15 @@ package net.cakemine.playerservers.bukkit.sync;
 import net.cakemine.playerservers.bukkit.*;
 import org.bukkit.entity.*;
 import com.google.common.io.*;
+
 import org.bukkit.*;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Base64;
 import java.util.logging.*;
+import java.util.zip.GZIPOutputStream;
+
 import org.bukkit.permissions.*;
 
 public class PluginSender {
@@ -151,9 +158,9 @@ public class PluginSender {
     }
     
     public void sendPluginMsg(Player player, ByteArrayDataOutput byteArrayDataOutput) {
-        Scheduler.runTaskLater(this.pl, () -> {
+        Scheduler.runTask(this.pl, () -> {
         	pl.utils.debug("Sending plugin message:");
-            player.sendPluginMessage(pl, "playerservers:core", byteArrayDataOutput.toByteArray());
-        }, 5L);
+            player.sendPluginMessage(pl, "playerservers:core", Base64.getEncoder().encode(byteArrayDataOutput.toByteArray()));
+        });
     }
 }

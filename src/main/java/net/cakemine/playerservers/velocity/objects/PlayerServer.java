@@ -1,27 +1,39 @@
 package net.cakemine.playerservers.velocity.objects;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.UUID;
 
+import com.velocitypowered.api.proxy.Player;
+
+import net.cakemine.playerservers.utils.ServerLogReader;
 import net.cakemine.playerservers.velocity.PlayerServers;
 
 public class PlayerServer {
-	PlayerServers pl = PlayerServers.getApi().getInstance();
+	PlayerServers pl;
+    Status status;
+	
+	public enum Status {
+        INSTALLING,
+        RUNNING,
+        STOPPED,
+        STARTING,
+        STOPPING
+    }
 	HashMap<String, HashMap<String, HashMap<String, String>>> serverStore;
 	HashMap<String, String> customSettings;
 	HashMap<String, String> settings;
 	HashMap<String, HashMap<String, String>> map;
 	File file;
 	final UUID uuid;
-	public PlayerServer(UUID serverUUID) {
+	public PlayerServer(UUID serverUUID, PlayerServers pl) {
+		this.pl = pl;
 		customSettings = new HashMap<>();
 		settings = new HashMap<>();
 		map = new HashMap<>();
@@ -77,6 +89,16 @@ public class PlayerServer {
 		return map;
 	}
 	
+	public void setServerMap(HashMap<String, HashMap<String, String>> serverMap) {
+		map.clear();
+		map = serverMap;
+	}
+	
+	public void sendCommand(String command) {
+        pl.getApi().getWrapperController().send("+command " + getName() + " " + command);
+    }
+	
+	
 	public void setCustomSetting(String setting, String value) {
 		customSettings.put(setting, value);
 		map.put("custom", customSettings);
@@ -113,6 +135,43 @@ public class PlayerServer {
 	
 	public String getMotd() {
 		return settings.get("server-motd");
+	}
+	
+	public String getRam() {
+		return settings.get("memory");
+	}
+	
+	public String getServerTemplateName() {
+		return settings.get("template-name");
+	}
+	
+	public Status getStatus() {
+		return status;
+	}
+	
+	public void setStatus(Status stats) {
+		status = stats;
+	}
+	
+	public Player getPlayer(UUID playerUuid) {
+		for (Player player : pl.proxy.getServer(getName()).get().getPlayersConnected()) {
+			if (player.getUniqueId() == playerUuid) return player;
+		}
+		return null;
+	}
+	
+	public BufferedReader getServerLog() {
+	    File serversDir = new File(pl.getDataFolder(), "servers");
+	    File serverDir = new File(serversDir, uuid.toString());
+	    File logsDir = new File(serverDir, "logs");
+	    File log = new File(logsDir, "latest.log");
+
+	    if (!serversDir.exists() || !logsDir.exists() || !log.exists()) {
+	        return null; // Only return null if the file doesn't exist
+	    }
+
+	    ServerLogReader serverLogReader = new ServerLogReader(log);
+	    return serverLogReader.getLogReader();
 	}
 	
 	public void save() {

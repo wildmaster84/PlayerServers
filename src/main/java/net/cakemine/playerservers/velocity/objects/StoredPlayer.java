@@ -13,7 +13,7 @@ import java.util.UUID;
 import net.cakemine.playerservers.velocity.PlayerServers;
 
 public class StoredPlayer {
-	PlayerServers pl = PlayerServers.getApi().getInstance();
+	PlayerServers pl;
 	HashMap<String, HashMap<String, HashMap<String, String>>> playerStore;
 
 	final UUID uuid;
@@ -23,7 +23,8 @@ public class StoredPlayer {
 	HashMap<String, String> playerInfo;
 	HashMap<String, HashMap<String, String>> map;
 	
-	public StoredPlayer(UUID playerUUID) {
+	public StoredPlayer(UUID playerUUID, PlayerServers pl) {
+		this.pl = pl;
 		playerStore = new HashMap<>();
 		customSettings = new HashMap<>();
 		permissions = new HashMap<>();

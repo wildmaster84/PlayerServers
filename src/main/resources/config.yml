@@ -5,15 +5,13 @@ wrapper-control-address: 'localhost'
 wrapper-control-port: 5155
 hub-server: 'default'
 servers-folder: 'default'
-startup-join-delay: 10
+startup-join-delay: 15
 online-join-delay: 3
 next-port: 26000
 use-expire-dates: true
 reset-expiry-on-create: false
 debug: false
 use-titles: true
-default-Xmx: 256M
-default-Xms: 128M
 use-startup-queue: true
 global-max-RAM: -1
 global-max-servers: -1
