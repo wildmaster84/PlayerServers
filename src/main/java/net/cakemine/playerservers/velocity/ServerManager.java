@@ -414,7 +414,6 @@ public class ServerManager
             if (commandSender != null) {
                 this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(s2, this.pl.msgMap.get("create-copying-files")).replaceAll("%template-name%", this.pl.templateManager.getTemplateSetting(templateFile, "template-name")));
             }
-            pl.serverManager.serverMap.get(s2).setStatus(Status.INSTALLING);
             this.setServerInfo(s2, "player-name", s);
             this.setServerInfo(s2, "server-name", s);
             this.setServerInfo(s2, "server-ip", this.pl.settingsManager.getSetting(s2, "server-ip"));
@@ -428,6 +427,7 @@ public class ServerManager
                 this.setServerInfo(s2, "expire-date", "1989-04-20 16:20");
                 this.pl.expiryTracker.addTime(s2, this.pl.templateManager.expireTime(templateFile), this.pl.templateManager.expireUnit(templateFile));
             }
+            pl.serverManager.serverMap.get(s2).setStatus(Status.INSTALLING);
             this.pl.utils.log("Created server for player " + this.pl.utils.getName(s2));
             if (commandSender != null) {
                 this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(s2, this.pl.msgMap.get("create-finished")));
