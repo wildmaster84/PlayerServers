@@ -102,7 +102,7 @@ public class ServerManager
         		StringBuilder sb = new StringBuilder();
         		sb.append("+start ")
                 .append(pl.utils.getSrvName(serverUUID)).append(" ")
-                .append(serversFolder).append(File.separator).append(" ")
+                .append(serversFolder.replace(" ", "\\/")).append(File.separator).append(" ")
                 .append(port).append(" ")
                 .append(maxPlayers).append(" ")
                 .append(startMem).append(" ")

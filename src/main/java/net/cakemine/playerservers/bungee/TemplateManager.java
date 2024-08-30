@@ -179,12 +179,12 @@ public class TemplateManager
         if (!file6.exists()) {
             this.pl.copyResource(file6);
         }
-        this.templateDone();
+        this.templateDone("default");
     }
     
-    public boolean templateDone() {
-        File file = new File(this.pl.getDataFolder(), "templates" + File.separator + "default" + File.separator + "add-spigot-jar-here.txt");
-        File file2 = new File(this.pl.getDataFolder(), "templates" + File.separator + "default");
+    public boolean templateDone(String template) {
+        File file = new File(this.pl.getDataFolder(), "templates" + File.separator + template + File.separator + "add-spigot-jar-here.txt");
+        File file2 = new File(this.pl.getDataFolder(), "templates" + File.separator + template);
         if (file2.isDirectory()) {
             String[] list = file2.list();
             Pattern compile = Pattern.compile("(?i)(spigot|folia|server|paperspigot|craftbukkit|cauldron|kcauldron|minecraft-server|minecraft_server|forge)(.+)?(\\.jar)");

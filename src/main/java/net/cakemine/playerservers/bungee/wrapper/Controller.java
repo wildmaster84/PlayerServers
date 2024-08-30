@@ -96,7 +96,7 @@ public class Controller implements Runnable {
                         String line = StandardCharsets.UTF_8.decode(readBuffer).toString();
                         this.pl.utils.log("[PSWrapper] " + line);
                         readBuffer.clear();
-                    } else {
+                    } else if (bytesRead == -1) {
                         this.pl.utils.log(Level.WARNING, "[PSWrapper] Lost connection, reconnecting...");
                         tryReconnect();
                         retryExecutor.schedule(this::connect, 15, TimeUnit.SECONDS);
@@ -112,10 +112,10 @@ public class Controller implements Runnable {
         this.shutdown = true;
         try {
             this.connection.close();
+            connect();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        connect();
     }
 
     public void disconnect() {
@@ -154,7 +154,11 @@ public class Controller implements Runnable {
             if (this.firstStart) {
                 this.pl.utils.log("Starting up PSWrapper and retrying connection...");
                 this.firstStart = false;
-                this.startWrapper();
+                if (!(ex instanceof BindException)) {
+                	this.startWrapper();
+                } else {
+                	this.pl.utils.log("Reconnecting to wrapper");
+                }
                 retryExecutor.schedule(this::tryReconnect, this.retryTime / 2, TimeUnit.SECONDS);
                 return;
             }

@@ -98,7 +98,7 @@ public class ServerManager
         		StringBuilder sb = new StringBuilder();
         		sb.append("+start ")
                 .append(pl.utils.getSrvName(serverUUID)).append(" ")
-                .append(serversFolder).append(File.separator).append(" ")
+                .append(serversFolder.replace(" ", "\\/")).append(File.separator).append(" ")
                 .append(port).append(" ")
                 .append(maxPlayers).append(" ")
                 .append(startMem).append(" ")
@@ -403,9 +403,9 @@ public class ServerManager
     }
     
     public boolean createServer(CommandSender commandSender, String s, String s2, File templateFile) {
-        if (!this.pl.templateManager.templateDone()) {
+        if (!this.pl.templateManager.templateDone(templateFile.getName())) {
             if (commandSender != null) {
-                this.pl.utils.sendMsg(commandSender, "&c&lYou must setup a default template before creating servers!||&e&oPut a server .jar file in the||&e&oBungee plugins/PlayerServers/templates/default folder.");
+                this.pl.utils.sendMsg(commandSender, "&c&lYou must setup a server jar before creating servers!||&e&oPut a server .jar file in the||&e&oBungee plugins/PlayerServers/templates/default folder.");
             }
             return false;
         }

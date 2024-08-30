@@ -26,7 +26,7 @@ public class RepeatTasks implements Runnable
     @Override
     public void run() {
         try {
-            if (this.pl.ctrl != null && !this.pl.ctrl.getSocket().isClosed()) {
+            if (this.pl.ctrl != null && this.pl.ctrl.getSocket().isOpen()) {
                 this.pl.ctrl.send("+heartbeat " + System.currentTimeMillis());
             }
             ArrayList<String> list = new ArrayList<String>();
