@@ -58,7 +58,8 @@ public class ControlGUI extends CustomGUI {
     @EventHandler
     @Override
     public void onInventoryClick(InventoryClickEvent event) {
-        String inventoryTitle = pl.utils.stripColor(event.getView().getTitle());
+    	InventoryView view = event.getView();
+        String inventoryTitle = pl.utils.stripColor(view.getTitle());
         Inventory inventory = event.getInventory();
         ItemStack currentItem = event.getCurrentItem();
         Player player = (Player) event.getWhoClicked();

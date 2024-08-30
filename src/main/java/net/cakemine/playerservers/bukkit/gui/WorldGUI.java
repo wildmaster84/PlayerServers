@@ -49,7 +49,8 @@ public class WorldGUI extends CustomGUI
     @EventHandler
     @Override
     public void onInventoryClick(InventoryClickEvent inventoryClickEvent) {
-        String stripColor = this.pl.utils.stripColor(inventoryClickEvent.getView().getTitle());
+    	InventoryView view = inventoryClickEvent.getView();
+        String stripColor = this.pl.utils.stripColor(view.getTitle());
         Inventory inventory = inventoryClickEvent.getInventory();
         ItemStack currentItem = inventoryClickEvent.getCurrentItem();
         Player player = (Player)inventoryClickEvent.getWhoClicked();

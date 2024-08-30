@@ -87,7 +87,8 @@ public class WhitelistGUI extends CustomGUI {
     @EventHandler
     @Override
     public void onInventoryClick(InventoryClickEvent event) {
-        String inventoryTitle = this.pl.utils.stripColor(event.getView().getTitle());
+    	InventoryView view = event.getView();
+        String inventoryTitle = this.pl.utils.stripColor(view.getTitle());
         Inventory inventory = event.getInventory();
         ItemStack currentItem = event.getCurrentItem();
         Player player = (Player) event.getWhoClicked();

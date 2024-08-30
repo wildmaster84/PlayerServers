@@ -82,7 +82,8 @@ public class PlayerManageGUI extends CustomGUI {
     @EventHandler
     @Override
     public void onInventoryClick(InventoryClickEvent event) {
-        String guiTitle = pl.utils.stripColor(pl.utils.color(event.getView().getTitle()));
+    	InventoryView view = event.getView();
+        String guiTitle = pl.utils.stripColor(pl.utils.color(view.getTitle()));
         String title = pl.utils.stripColor(pl.utils.color(getTitle()));
         Inventory inventory = event.getInventory();
         ItemStack clickedItem = event.getCurrentItem();

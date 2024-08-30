@@ -98,8 +98,9 @@ public class TemplatesGUI extends CustomGUI {
     @Override
     public void onInventoryClick(InventoryClickEvent event) {
         pl.utils.debug("clicked TemplatesGUI");
-
-        String inventoryTitle = pl.utils.stripColor(event.getView().getTitle());
+        
+        InventoryView view = event.getView();
+        String inventoryTitle = pl.utils.stripColor(view.getTitle());
         Inventory inventory = event.getInventory();
         ItemStack currentItem = event.getCurrentItem();
         Player player = (Player) event.getWhoClicked();
