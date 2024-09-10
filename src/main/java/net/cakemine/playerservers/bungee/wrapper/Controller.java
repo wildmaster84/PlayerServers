@@ -33,7 +33,7 @@ public class Controller implements Runnable {
         this.shutdown = false;
         this.ip = pl.wrapperAddress;
         this.port = pl.wrapperPort;
-        this.writeExecutor = Executors.newSingleThreadExecutor();
+        this.writeExecutor = Executors.newCachedThreadPool();
         this.retryExecutor = Executors.newScheduledThreadPool(1);
         this.readBuffer = ByteBuffer.allocate(1024);
         this.writeBuffer = ByteBuffer.allocate(1024);
@@ -102,7 +102,11 @@ public class Controller implements Runnable {
                         retryExecutor.schedule(this::connect, 15, TimeUnit.SECONDS);
                     }
             	}
-                
+            	try {
+                    Thread.sleep(5000L);
+                } catch (InterruptedException interruptedException) {
+                    Thread.currentThread().interrupt();
+                }
             }
         } catch (IOException ex) {}
     }

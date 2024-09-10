@@ -97,8 +97,7 @@ public class StoredPlayer {
 	}
 	
 	public String getUsername() {
-		// Ehh.. should be cached..
-		return this.pl.proxy.getPlayer(uuid).getName();
+		return (playerInfo.get("username") == null ? null : playerInfo.get("username"));
 	}
 	
 	public HashMap<String, String> getPermissions(){

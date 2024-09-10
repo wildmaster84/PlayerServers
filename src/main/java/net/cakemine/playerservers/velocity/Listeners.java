@@ -62,6 +62,10 @@ public class Listeners {
             String string = player.getUniqueId().toString();
             if (!this.pl.playerMap.containsKey(player.getUniqueId())) {
                 this.pl.loadPlayer(player.getUniqueId(), new StoredPlayer(player.getUniqueId(), this.pl));
+                if (this.pl.playerMap.get(player.getUniqueId()).getUsername() == null || !this.pl.playerMap.get(player.getUniqueId()).getUsername().equals(player.getUsername())) {
+                	this.pl.utils.log(player.getUsername() + "'s name was changed, updating cache.");
+                	this.pl.playerMap.get(player.getUniqueId()).setPlayerinfo("username", player.getUsername());
+                }
             }
             if (this.pl.serverManager.hasServer(player.getUniqueId().toString()) && !this.pl.serverManager.getServerInfo(string, "player-name").equals(player.getUsername())) {
                 this.pl.utils.log(player.getUsername() + " has changed their name. Updating their server.");
