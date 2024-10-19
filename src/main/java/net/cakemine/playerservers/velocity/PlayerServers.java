@@ -300,6 +300,9 @@ public class PlayerServers {
     }
 
     private boolean updateConfigOption(String key, Object defaultValue) {
+    	if (config == null) {
+    		config = new HashMap<>();
+    	}
         if (!config.containsKey(key)) {
             config.put(key, defaultValue);
             utils.log("Added missing " + key + " config option to the config.");
