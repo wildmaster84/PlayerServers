@@ -233,7 +233,7 @@ public class PlayerServers {
         }
         
         config = (HashMap<String, Object>) loadFile("config.yml");
-        messages = (HashMap<String, String>) loadFile("messages.yml").get("messages");
+        messages = (HashMap<String, String>) (loadFile("messages.yml").get("messages") != null ? loadFile("messages.yml").get("messages") : loadFile("messages.yml"));
         guis = (HashMap<String, Object>) loadFile("guis.yml");
 
         createDirectory("data/servers");
