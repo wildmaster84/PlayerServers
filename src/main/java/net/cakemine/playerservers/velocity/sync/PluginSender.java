@@ -21,10 +21,12 @@ public class PluginSender
     PlayerServers pl;
     public List<RegisteredServer> syncedServers;
     public String guisSerialized;
+    public String[] syncActions;
     ObjectMapper mapper = new ObjectMapper();
     public PluginSender(PlayerServers pl) {
         this.syncedServers = new ArrayList<RegisteredServer>();
         this.pl = pl;
+        this.syncActions = new String[] { "debug", "version", "messages", "prefix", "fallback", "useExpire", "expiredate", "daysleft", "blockedcmds", "alwaysops", "timeleft", "expirecheck", "templates", "psCustomCmd", "guis" };
     }
     
     public void sendPluginMsg(RegisteredServer server, ByteArrayDataOutput byteArrayDataOutput) {
@@ -42,16 +44,16 @@ public class PluginSender
             }
             String string = proxiedPlayer.getUniqueId().toString();
             this.sendStructuredMessage("reSync", string);
-            String[] array2;
-            String[] array = array2 = new String[] { "debug", "version", "messages", "prefix", "fallback", "useExpire", "expiredate", "daysleft", "blockedcmds", "alwaysops", "timeleft", "expirecheck", "templates", "psCustomCmd", "guis" };
-            for (String s : array2) {
+            for (String s : syncActions) {
                 if (this.pl.proxy.getPlayer(UUID.fromString(string)) == null) {
                     this.pl.utils.debug("Player returned null when sending server resync messages, aborting.");
                     return;
                 }
                 this.sendStructuredMessage(s, string);
             }
-            this.confirmSync(server, array.length);
+            this.pl.proxy.getScheduler().buildTask(this.pl, () -> {
+            	this.confirmSync(server, syncActions.length);
+            }).delay(3L, TimeUnit.SECONDS).schedule();
         }
     }
     
@@ -239,7 +241,7 @@ public class PluginSender
 				try {
 					String jsonString = mapper.writeValueAsString(templates);
 					this.pl.utils.debug("input = " + jsonString);
-					dataOutput.writeUTF(Base64.getEncoder().encodeToString(jsonString.getBytes()));
+					dataOutput.writeUTF(jsonString);
 				} catch (JsonProcessingException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

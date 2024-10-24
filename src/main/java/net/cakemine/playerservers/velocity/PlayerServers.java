@@ -10,6 +10,7 @@ import java.io.*;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.google.common.io.ByteStreams;
@@ -47,7 +48,7 @@ public class PlayerServers {
     public Yaml yaml;
 
     protected HashMap<String, Object> config;
-    protected HashMap<String, HashMap<String, String>> messages;
+    protected HashMap<String, String> messages;
     protected HashMap<String, Object> guis;
     protected HashMap<String, HashMap<String, Object>> online;
     public HashMap<String, HashMap<String, String>> permMap;
@@ -115,7 +116,7 @@ public class PlayerServers {
         this.usingHelper = new HashMap<>();
         
         // Set default values
-        this.debug = true;
+        this.debug = false;
         this.useExpiry = true;
         this.resetExpiry = false;
         this.useTitles = true;
@@ -230,36 +231,66 @@ public class PlayerServers {
         if (!getDataFolder().exists()) {
             getDataFolder().mkdir();
         }
-
-        loadFile("config.yml");
-        loadFile("messages.yml");
-        loadFile("guis.yml");
+        
+        config = (HashMap<String, Object>) loadFile("config.yml");
+        messages = (HashMap<String, String>) loadFile("messages.yml").get("messages");
+        guis = (HashMap<String, Object>) loadFile("guis.yml");
 
         createDirectory("data/servers");
         createDirectory("data/players");
         createDirectory("servers");
 
         loadYamlFile("config.yml", config);
-        loadMsgYamlFile("messages.yml", messages);
+        loadYamlFile("messages.yml", messages);
         loadYamlFile("guis.yml", guis);
     }
 
-    private void loadFile(String fileName) {
+    private HashMap<String, ?> loadFile(String fileName) {
         File file = new File(getDataFolder(), fileName);
         if (!file.exists()) {
             copyResource(file);
         }
+        InputStream inputStream;
+		try {
+			inputStream = new FileInputStream(file);
+			HashMap<String, Object> data = yaml.load(inputStream);
+
+			return data;
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		utils.log(Level.SEVERE, "Failed to load " + fileName);
+        return null;
+    }
+    
+    private HashMap<String, HashMap<String, String>> loadFile2(String fileName) {
+        File file = new File(getDataFolder(), fileName);
+        if (!file.exists()) {
+            copyResource(file);
+        }
+        InputStream inputStream;
+		try {
+			inputStream = new FileInputStream(file);
+			HashMap<String, HashMap<String, String>> data = yaml.load(inputStream);
+
+			return data;
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        return null;
     }
 
     private void createDirectory(String path) {
-        File dir = new File(getDataFolder() + File.separator + path);
+        File dir = new File(getDataFolder(), path.replace("/", File.separator));
         utils.debug("Directory = " + dir.toString());
         if (!dir.exists()) {
             dir.mkdirs();
         }
     }
 
-    private void loadYamlFile(String fileName, HashMap<String, Object> targetMap) {
+    private void loadYamlFile(String fileName, HashMap<String, ?> targetMap) {
         try (InputStream inputStream = new FileInputStream(getDataFolder().getPath() + File.separator + fileName)) {
             targetMap = yaml.load(new InputStreamReader(inputStream, "UTF-8"));
         } catch (IOException e) {
@@ -278,7 +309,7 @@ public class PlayerServers {
     public void updateConfig() {
         boolean changed = false;
 
-        changed |= updateConfigOption("blocked-commands", new String[]{"^(/execute(.*)|/)(minecraft:)(ban(-ip)?|pardon(-ip)?|stop|reload)($|\\s.*)?"});
+        changed |= updateConfigOption("blocked-commands", Arrays.asList("^(/execute(.*)|/)(minecraft:)(ban(-ip)?|pardon(-ip)?|stop|reload)($|\\s.*)?"));
         changed |= updateConfigOption("ps-custom-command", "/playerserver");
         changed |= updateConfigOption("global-max-RAM", -1);
         changed |= updateConfigOption("global-max-servers", -1);
@@ -288,11 +319,12 @@ public class PlayerServers {
         changed |= updateConfigOption("purge-servers", false);
         changed |= updateConfigOption("purge-after", "30 days");
         changed |= updateConfigOption("purge-interval", "6 hours");
-        changed |= updateConfigOption("wrapper", "screen");
+        changed |= updateConfigOption("wrapper", "default");
         changed |= updateConfigOption("wrapper-control-address", "localhost");
         changed |= updateConfigOption("wrapper-control-port", 5155);
         changed |= updateConfigOption("online-join-delay", 3);
         changed |= updateConfigOption("use-startup-queue", true);
+        changed |= updateConfigOption("debug", false);
 
         if (changed) {
             saveConfig(config, "config.yml");
@@ -300,9 +332,7 @@ public class PlayerServers {
     }
 
     private boolean updateConfigOption(String key, Object defaultValue) {
-    	if (config == null) {
-    		config = new HashMap<>();
-    	}
+    	if (config == null)
         if (!config.containsKey(key)) {
             config.put(key, defaultValue);
             utils.log("Added missing " + key + " config option to the config.");
@@ -342,7 +372,7 @@ public class PlayerServers {
         useTitles = (boolean) config.get("use-titles");
         autoPurge = (boolean) config.get("purge-servers");
         autoPurgeTime = expiryTracker.stringToMillis(config.get("purge-after").toString());
-        autoPurgeInterval = expiryTracker.stringToMillis(config.get("purge-interval").toString());
+        autoPurgeInterval = expiryTracker.stringToMillis(config.get("purge-check-interval").toString());
         wrapper = resolveWrapper(config.get("wrapper").toString());
         wrapperPort = (int) config.get("wrapper-control-port");
         wrapperAddress = (wrapper.equals("default")) ? "127.0.0.1" : config.get("wrapper-control-address").toString();
@@ -460,178 +490,178 @@ public class PlayerServers {
     }
 
     public void loadMsgs() {
-    	this.utils.debug("messages class: " + this.messages.get("messages").getClass());
-        this.msgMap.put("no-permissions",  this.messages.get("messages").get("no-permissions").toString());
-        this.msgMap.put("no-server", this.messages.get("messages").get("no-server").toString());
-        this.msgMap.put("other-no-server", this.messages.get("messages").get("other-no-server").toString());
-        this.msgMap.put("not-player-server", this.messages.get("messages").get("not-player-server").toString());
-        this.msgMap.put("no-player-specified", this.messages.get("messages").get("no-player-specified").toString());
-        this.msgMap.put("no-value-specified", this.messages.get("messages").get("no-value-specified").toString());
-        this.msgMap.put("only-player-use", this.messages.get("messages").get("only-player-use").toString());
-        this.msgMap.put("have-server", this.messages.get("messages").get("have-server").toString());
-        this.msgMap.put("other-have-server", this.messages.get("messages").get("other-have-server").toString());
-        this.msgMap.put("sent-fallback", this.messages.get("messages").get("sent-fallback").toString());
-        this.msgMap.put("blocked-cmd", this.messages.get("messages").get("blocked-cmd").toString());
-        this.msgMap.put("recently-started", this.messages.get("messages").get("recently-started").toString());
-        this.msgMap.put("server-expired", this.messages.get("messages").get("server-expired").toString());
-        this.msgMap.put("create-start", this.messages.get("messages").get("create-start").toString());
-        this.msgMap.put("create-finished", this.messages.get("messages").get("create-finished").toString());
-        this.msgMap.put("create-copying-files", this.messages.get("messages").get("create-copying-files").toString());
-        this.msgMap.put("create-failed-copy", this.messages.get("messages").get("create-failed-copy").toString());
-        this.msgMap.put("create-missing-template", this.messages.get("messages").get("create-missing-template").toString());
-        this.msgMap.put("expire-times", this.messages.get("messages").get("expire-times").toString());
-        this.msgMap.put("others-expire-times", this.messages.get("messages").get("others-expire-times").toString());
-        this.msgMap.put("check-expire-times", this.messages.get("messages").get("check-expire-times").toString());
-        this.msgMap.put("check-expire-unlimited", this.messages.get("messages").get("check-expire-unlimited").toString());
-        this.msgMap.put("days-left", this.messages.get("messages").get("days-left").toString());
-        this.msgMap.put("not-enough-time", this.messages.get("messages").get("not-enough-time").toString());
-        this.msgMap.put("no-share-unlimited", this.messages.get("messages").get("no-share-unlimited").toString());
-        this.msgMap.put("other-days-left", this.messages.get("messages").get("other-days-left").toString());
-        this.msgMap.put("other-removed-days", this.messages.get("messages").get("other-removed-days").toString());
-        this.msgMap.put("other-added-days", this.messages.get("messages").get("other-added-days").toString());
-        this.msgMap.put("invalid-time-unit", this.messages.get("messages").get("invalid-time-unit").toString());
-        this.msgMap.put("delete-warning", this.messages.get("messages").get("delete-warning").toString());
-        this.msgMap.put("start-delete", this.messages.get("messages").get("start-delete").toString());
-        this.msgMap.put("finish-delete", this.messages.get("messages").get("finish-delete").toString());
-        this.msgMap.put("finish-delete-problem", this.messages.get("messages").get("finish-delete-problem").toString());
-        this.msgMap.put("other-server-already-online", this.messages.get("messages").get("other-server-already-online").toString());
-        this.msgMap.put("server-already-online", this.messages.get("messages").get("server-already-online").toString());
-        this.msgMap.put("stopping-all-servers", this.messages.get("messages").get("stopping-all-servers").toString());
-        this.msgMap.put("server-join-online-owner", this.messages.get("messages").get("server-join-online-owner").toString());
-        this.msgMap.put("server-join-online-guest", this.messages.get("messages").get("server-join-online-guest").toString());
-        this.msgMap.put("server-join-offline-owner", this.messages.get("messages").get("server-join-offline-owner").toString());
-        this.msgMap.put("server-join-offline-guest", this.messages.get("messages").get("server-join-offline-guest").toString());
-        this.msgMap.put("server-stop-online-owner", this.messages.get("messages").get("server-stop-online-owner").toString());
-        this.msgMap.put("server-stop-online-guest", this.messages.get("messages").get("server-stop-online-guest").toString());
-        this.msgMap.put("server-stop-offline-owner", this.messages.get("messages").get("server-stop-offline-owner").toString());
-        this.msgMap.put("server-stop-offline-guest", this.messages.get("messages").get("server-stop-offline-guest").toString());
-        this.msgMap.put("other-server-not-online", this.messages.get("messages").get("other-server-not-online").toString());
-        this.msgMap.put("other-started-server", this.messages.get("messages").get("other-started-server").toString());
-        this.msgMap.put("other-stopping-server", this.messages.get("messages").get("other-stopping-server").toString());
-        this.msgMap.put("got-kicked", this.messages.get("messages").get("got-kicked").toString());
-        this.msgMap.put("got-banned", this.messages.get("messages").get("got-banned").toString());
-        this.msgMap.put("config-reloaded", this.messages.get("messages").get("config-reloaded").toString());
-        this.msgMap.put("max-memory-changed", this.messages.get("messages").get("max-memory-changed").toString());
-        this.msgMap.put("start-memory-changed", this.messages.get("messages").get("start-memory-changed").toString());
-        this.msgMap.put("max-players-count", this.messages.get("messages").get("max-players-count").toString());
-        this.msgMap.put("invalid-memory-format", this.messages.get("messages").get("invalid-memory-format").toString());
-        this.msgMap.put("invalid-slot-count", this.messages.get("messages").get("invalid-slot-count").toString());
-        this.msgMap.put("start-greater-max", this.messages.get("messages").get("start-greater-max").toString());
-        this.msgMap.put("max-lessthan-start", this.messages.get("messages").get("max-lessthan-start").toString());
-        this.msgMap.put("player-never-joined", this.messages.get("messages").get("player-never-joined").toString());
-        this.msgMap.put("no-template-specified", this.messages.get("messages").get("no-template-specified").toString());
-        this.msgMap.put("template-doesnt-exist", this.messages.get("messages").get("template-doesnt-exist").toString());
-        this.msgMap.put("no-templates-found", this.messages.get("messages").get("no-templates-found").toString());
-        this.msgMap.put("available-templates", this.messages.get("messages").get("available-templates").toString());
-        this.msgMap.put("no-template-permissions", this.messages.get("messages").get("no-template-permissions").toString());
-        this.msgMap.put("max-memory-reached", this.messages.get("messages").get("max-memory-reached").toString());
-        this.msgMap.put("max-servers-reached", this.messages.get("messages").get("max-servers-reached").toString());
-        this.msgMap.put("added-to-queue", this.messages.get("messages").get("added-to-queue").toString());
-        this.msgMap.put("removed-from-queue", this.messages.get("messages").get("removed-from-queue").toString());
-        this.msgMap.put("queue-startup", this.messages.get("messages").get("queue-startup").toString());
-        this.msgMap.put("gamemode-changed", this.messages.get("messages").get("gamemode-changed").toString());
-        this.msgMap.put("force-gamemode-on", this.messages.get("messages").get("force-gamemode-on").toString());
-        this.msgMap.put("force-gamemode-off", this.messages.get("messages").get("force-gamemode-off").toString());
-        this.msgMap.put("difficulty-changed", this.messages.get("messages").get("difficulty-changed").toString());
-        this.msgMap.put("whitelist-add-timeout", this.messages.get("messages").get("whitelist-add-timeout").toString());
-        this.msgMap.put("whitelist-add-cancelled", this.messages.get("messages").get("whitelist-add-cancelled").toString());
-        this.msgMap.put("whitelist-modify-instructions", this.messages.get("messages").get("whitelist-modify-instructions").toString());
-        this.msgMap.put("whitelist-cleared", this.messages.get("messages").get("whitelist-cleared").toString());
-        this.msgMap.put("whitelist-added", this.messages.get("messages").get("whitelist-added").toString());
-        this.msgMap.put("whitelist-removed", this.messages.get("messages").get("whitelist-removed").toString());
-        this.msgMap.put("whitelist-enabled", this.messages.get("messages").get("whitelist-enabled").toString());
-        this.msgMap.put("whitelist-disabled", this.messages.get("messages").get("whitelist-disabled").toString());
-        this.msgMap.put("monster-spawns-on", this.messages.get("messages").get("monster-spawns-on").toString());
-        this.msgMap.put("monster-spawns-off", this.messages.get("messages").get("monster-spawns-off").toString());
-        this.msgMap.put("animal-spawns-on", this.messages.get("messages").get("animal-spawns-on").toString());
-        this.msgMap.put("animal-spawns-off", this.messages.get("messages").get("animal-spawns-off").toString());
-        this.msgMap.put("npc-spawns-on", this.messages.get("messages").get("npc-spawns-on").toString());
-        this.msgMap.put("npc-spawns-off", this.messages.get("messages").get("npc-spawns-off").toString());
-        this.msgMap.put("allow-nether-on", this.messages.get("messages").get("allow-nether-on").toString());
-        this.msgMap.put("allow-nether-off", this.messages.get("messages").get("allow-nether-off").toString());
-        this.msgMap.put("allow-flight-on", this.messages.get("messages").get("allow-flight-on").toString());
-        this.msgMap.put("allow-flight-off", this.messages.get("messages").get("allow-flight-off").toString());
-        this.msgMap.put("generate-structures-on", this.messages.get("messages").get("generate-structures-on").toString());
-        this.msgMap.put("generate-structures-off", this.messages.get("messages").get("generate-structures-off").toString());
-        this.msgMap.put("kicked-player", this.messages.get("messages").get("kicked-player").toString());
-        this.msgMap.put("got-kicked", this.messages.get("messages").get("got-kicked").toString());
-        this.msgMap.put("banned-player", this.messages.get("messages").get("banned-player").toString());
-        this.msgMap.put("unbanned-player", this.messages.get("messages").get("unbanned-player").toString());
-        this.msgMap.put("got-banned", this.messages.get("messages").get("got-banned").toString());
-        this.msgMap.put("ban-message", this.messages.get("messages").get("ban-message").toString());
-        this.msgMap.put("pvp-enabled", this.messages.get("messages").get("pvp-enabled").toString());
-        this.msgMap.put("pvp-disabled", this.messages.get("messages").get("pvp-disabled").toString());
-        this.msgMap.put("regain-info", this.messages.get("messages").get("regain-info").toString());
-        this.msgMap.put("opped-player", this.messages.get("messages").get("opped-player").toString());
-        this.msgMap.put("deopped-player", this.messages.get("messages").get("deopped-player").toString());
-        this.msgMap.put("must-be-online", this.messages.get("messages").get("must-be-online").toString());
-        this.msgMap.put("leave-message", this.messages.get("messages").get("leave-message").toString());
-        this.msgMap.put("motd-display", this.messages.get("messages").get("motd-display").toString());
-        this.msgMap.put("motd-changed", this.messages.get("messages").get("motd-changed").toString());
-        this.msgMap.put("motd-too-long", this.messages.get("messages").get("motd-too-long").toString());
-        this.msgMap.put("server-join-online-guest-title", this.messages.get("messages").get("server-join-online-guest-title").toString());
-        this.msgMap.put("server-join-offline-guest-title", this.messages.get("messages").get("server-join-offline-guest-title").toString());
-        this.msgMap.put("server-join-online-owner-title", this.messages.get("messages").get("server-join-online-owner-title").toString());
-        this.msgMap.put("server-join-offline-owner-title", this.messages.get("messages").get("server-join-offline-owner-title").toString());
-        this.msgMap.put("server-stop-online-owner-title", this.messages.get("messages").get("server-stop-online-owner-title").toString());
-        this.msgMap.put("server-stop-online-guest-title", this.messages.get("messages").get("server-stop-online-guest-title").toString());
-        this.msgMap.put("server-stop-offline-owner-title", this.messages.get("messages").get("server-stop-offline-owner-title").toString());
-        this.msgMap.put("server-stop-offline-guest-title", this.messages.get("messages").get("server-stop-offline-guest-title").toString());
-        this.msgMap.put("other-server-not-online-title", this.messages.get("messages").get("other-server-not-online-title").toString());
-        this.msgMap.put("no-server-title", this.messages.get("messages").get("no-server-title").toString());
-        this.msgMap.put("other-no-server-title", this.messages.get("messages").get("other-no-server-title").toString());
-        this.msgMap.put("server-expired-title", this.messages.get("messages").get("server-expired-title").toString());
-        this.msgMap.put("max-memory-reached-title", this.messages.get("messages").get("max-memory-reached-title").toString());
-        this.msgMap.put("max-servers-reached-title", this.messages.get("messages").get("max-servers-reached-title").toString());
-        this.msgMap.put("max-players-count", this.messages.get("messages").get("max-players-count").toString());
-        this.msgMap.put("no-player-specified-title", this.messages.get("messages").get("no-player-specified-title").toString());
-        this.msgMap.put("sent-fallback-title", this.messages.get("messages").get("sent-fallback-title").toString());
-        this.msgMap.put("not-player-server-title", this.messages.get("messages").get("not-player-server-title").toString());
-        this.msgMap.put("template-doesnt-exist-title", this.messages.get("messages").get("template-doesnt-exist-title").toString());
-        this.msgMap.put("no-templates-found-title", this.messages.get("messages").get("no-templates-found-title").toString());
-        this.msgMap.put("create-start-title", this.messages.get("messages").get("create-start-title").toString());
-        this.msgMap.put("have-server-title", this.messages.get("messages").get("have-server-title").toString());
-        this.msgMap.put("delete-warning-title", this.messages.get("messages").get("delete-warning-title").toString());
-        this.msgMap.put("recently-started-title", this.messages.get("messages").get("recently-started-title").toString());
-        this.msgMap.put("added-to-queue-title", this.messages.get("messages").get("added-to-queue-title").toString());
-        this.msgMap.put("removed-from-queue-title", this.messages.get("messages").get("removed-from-queue-title").toString());
-        this.msgMap.put("queue-startup-title", this.messages.get("messages").get("queue-startup-title").toString());
-        this.msgMap.put("help-ps-header", this.messages.get("messages").get("help-ps-header").toString());
-        this.msgMap.put("help-ps-join", this.messages.get("messages").get("help-ps-join").toString());
-        this.msgMap.put("help-ps-leave", this.messages.get("messages").get("help-ps-leave").toString());
-        this.msgMap.put("help-ps-create", this.messages.get("messages").get("help-ps-create").toString());
-        this.msgMap.put("help-ps-home", this.messages.get("messages").get("help-ps-home").toString());
-        this.msgMap.put("help-ps-stop", this.messages.get("messages").get("help-ps-stop").toString());
-        this.msgMap.put("help-ps-delete", this.messages.get("messages").get("help-ps-delete").toString());
-        this.msgMap.put("help-ps-motd", this.messages.get("messages").get("help-ps-motd").toString());
-        this.msgMap.put("help-ps-time", this.messages.get("messages").get("help-ps-time").toString());
-        this.msgMap.put("help-ps-worlds", this.messages.get("messages").get("help-ps-worlds").toString());
-        this.msgMap.put("help-ps-sharetime", this.messages.get("messages").get("help-ps-sharetime").toString());
-        this.msgMap.put("help-psa-header", this.messages.get("messages").get("help-psa-header").toString());
-        this.msgMap.put("help-psa-create", this.messages.get("messages").get("help-psa-create").toString());
-        this.msgMap.put("help-psa-templates", this.messages.get("messages").get("help-psa-templates").toString());
-        this.msgMap.put("help-psa-join", this.messages.get("messages").get("help-psa-join").toString());
-        this.msgMap.put("help-psa-start", this.messages.get("messages").get("help-psa-start").toString());
-        this.msgMap.put("help-psa-stop", this.messages.get("messages").get("help-psa-stop").toString());
-        this.msgMap.put("help-psa-delete", this.messages.get("messages").get("help-psa-delete").toString());
-        this.msgMap.put("help-psa-stopall", this.messages.get("messages").get("help-psa-stopall").toString());
-        this.msgMap.put("help-psa-kill", this.messages.get("messages").get("help-psa-kill").toString());
-        this.msgMap.put("help-psa-addtime", this.messages.get("messages").get("help-psa-addtime").toString());
-        this.msgMap.put("help-psa-removetime", this.messages.get("messages").get("help-psa-removetime").toString());
-        this.msgMap.put("help-psa-checktime", this.messages.get("messages").get("help-psa-checktime").toString());
-        this.msgMap.put("help-psa-maxmem", this.messages.get("messages").get("help-psa-maxmem").toString());
-        this.msgMap.put("help-psa-startmem", this.messages.get("messages").get("help-psa-startmem").toString());
-        this.msgMap.put("help-psa-slots", this.messages.get("messages").get("help-psa-slots").toString());
-        this.msgMap.put("help-psa-reload", this.messages.get("messages").get("help-psa-reload").toString());
-        this.msgMap.put("help-psa-motd", this.messages.get("messages").get("help-psa-motd").toString());
-        this.msgMap.put("help-mys-header", this.messages.get("messages").get("help-mys-header").toString());
-        this.msgMap.put("help-mys-settings", this.messages.get("messages").get("help-mys-settings").toString());
-        this.msgMap.put("help-mys-ban", this.messages.get("messages").get("help-mys-ban").toString());
-        this.msgMap.put("help-mys-kick", this.messages.get("messages").get("help-mys-kick").toString());
-        this.msgMap.put("help-mys-whitelist", this.messages.get("messages").get("help-mys-whitelist").toString());
-        this.msgMap.put("help-mys-op", this.messages.get("messages").get("help-mys-op").toString());
-        this.msgMap.put("help-mys-regain", this.messages.get("messages").get("help-mys-regain").toString());
-        this.msgMap.put("help-mys-stop",  this.messages.get("messages").get("help-mys-stop").toString());
+    	this.utils.debug("messages class: " + this.messages.getClass());
+        this.msgMap.put("no-permissions",  this.messages.get("no-permissions").toString());
+        this.msgMap.put("no-server", this.messages.get("no-server").toString());
+        this.msgMap.put("other-no-server", this.messages.get("other-no-server").toString());
+        this.msgMap.put("not-player-server", this.messages.get("not-player-server").toString());
+        this.msgMap.put("no-player-specified", this.messages.get("no-player-specified").toString());
+        this.msgMap.put("no-value-specified", this.messages.get("no-value-specified").toString());
+        this.msgMap.put("only-player-use", this.messages.get("only-player-use").toString());
+        this.msgMap.put("have-server", this.messages.get("have-server").toString());
+        this.msgMap.put("other-have-server", this.messages.get("other-have-server").toString());
+        this.msgMap.put("sent-fallback", this.messages.get("sent-fallback").toString());
+        this.msgMap.put("blocked-cmd", this.messages.get("blocked-cmd").toString());
+        this.msgMap.put("recently-started", this.messages.get("recently-started").toString());
+        this.msgMap.put("server-expired", this.messages.get("server-expired").toString());
+        this.msgMap.put("create-start", this.messages.get("create-start").toString());
+        this.msgMap.put("create-finished", this.messages.get("create-finished").toString());
+        this.msgMap.put("create-copying-files", this.messages.get("create-copying-files").toString());
+        this.msgMap.put("create-failed-copy", this.messages.get("create-failed-copy").toString());
+        this.msgMap.put("create-missing-template", this.messages.get("create-missing-template").toString());
+        this.msgMap.put("expire-times", this.messages.get("expire-times").toString());
+        this.msgMap.put("others-expire-times", this.messages.get("others-expire-times").toString());
+        this.msgMap.put("check-expire-times", this.messages.get("check-expire-times").toString());
+        this.msgMap.put("check-expire-unlimited", this.messages.get("check-expire-unlimited").toString());
+        this.msgMap.put("days-left", this.messages.get("days-left").toString());
+        this.msgMap.put("not-enough-time", this.messages.get("not-enough-time").toString());
+        this.msgMap.put("no-share-unlimited", this.messages.get("no-share-unlimited").toString());
+        this.msgMap.put("other-days-left", this.messages.get("other-days-left").toString());
+        this.msgMap.put("other-removed-days", this.messages.get("other-removed-days").toString());
+        this.msgMap.put("other-added-days", this.messages.get("other-added-days").toString());
+        this.msgMap.put("invalid-time-unit", this.messages.get("invalid-time-unit").toString());
+        this.msgMap.put("delete-warning", this.messages.get("delete-warning").toString());
+        this.msgMap.put("start-delete", this.messages.get("start-delete").toString());
+        this.msgMap.put("finish-delete", this.messages.get("finish-delete").toString());
+        this.msgMap.put("finish-delete-problem", this.messages.get("finish-delete-problem").toString());
+        this.msgMap.put("other-server-already-online", this.messages.get("other-server-already-online").toString());
+        this.msgMap.put("server-already-online", this.messages.get("server-already-online").toString());
+        this.msgMap.put("stopping-all-servers", this.messages.get("stopping-all-servers").toString());
+        this.msgMap.put("server-join-online-owner", this.messages.get("server-join-online-owner").toString());
+        this.msgMap.put("server-join-online-guest", this.messages.get("server-join-online-guest").toString());
+        this.msgMap.put("server-join-offline-owner", this.messages.get("server-join-offline-owner").toString());
+        this.msgMap.put("server-join-offline-guest", this.messages.get("server-join-offline-guest").toString());
+        this.msgMap.put("server-stop-online-owner", this.messages.get("server-stop-online-owner").toString());
+        this.msgMap.put("server-stop-online-guest", this.messages.get("server-stop-online-guest").toString());
+        this.msgMap.put("server-stop-offline-owner", this.messages.get("server-stop-offline-owner").toString());
+        this.msgMap.put("server-stop-offline-guest", this.messages.get("server-stop-offline-guest").toString());
+        this.msgMap.put("other-server-not-online", this.messages.get("other-server-not-online").toString());
+        this.msgMap.put("other-started-server", this.messages.get("other-started-server").toString());
+        this.msgMap.put("other-stopping-server", this.messages.get("other-stopping-server").toString());
+        this.msgMap.put("got-kicked", this.messages.get("got-kicked").toString());
+        this.msgMap.put("got-banned", this.messages.get("got-banned").toString());
+        this.msgMap.put("config-reloaded", this.messages.get("config-reloaded").toString());
+        this.msgMap.put("max-memory-changed", this.messages.get("max-memory-changed").toString());
+        this.msgMap.put("start-memory-changed", this.messages.get("start-memory-changed").toString());
+        this.msgMap.put("max-players-count", this.messages.get("max-players-count").toString());
+        this.msgMap.put("invalid-memory-format", this.messages.get("invalid-memory-format").toString());
+        this.msgMap.put("invalid-slot-count", this.messages.get("invalid-slot-count").toString());
+        this.msgMap.put("start-greater-max", this.messages.get("start-greater-max").toString());
+        this.msgMap.put("max-lessthan-start", this.messages.get("max-lessthan-start").toString());
+        this.msgMap.put("player-never-joined", this.messages.get("player-never-joined").toString());
+        this.msgMap.put("no-template-specified", this.messages.get("no-template-specified").toString());
+        this.msgMap.put("template-doesnt-exist", this.messages.get("template-doesnt-exist").toString());
+        this.msgMap.put("no-templates-found", this.messages.get("no-templates-found").toString());
+        this.msgMap.put("available-templates", this.messages.get("available-templates").toString());
+        this.msgMap.put("no-template-permissions", this.messages.get("no-template-permissions").toString());
+        this.msgMap.put("max-memory-reached", this.messages.get("max-memory-reached").toString());
+        this.msgMap.put("max-servers-reached", this.messages.get("max-servers-reached").toString());
+        this.msgMap.put("added-to-queue", this.messages.get("added-to-queue").toString());
+        this.msgMap.put("removed-from-queue", this.messages.get("removed-from-queue").toString());
+        this.msgMap.put("queue-startup", this.messages.get("queue-startup").toString());
+        this.msgMap.put("gamemode-changed", this.messages.get("gamemode-changed").toString());
+        this.msgMap.put("force-gamemode-on", this.messages.get("force-gamemode-on").toString());
+        this.msgMap.put("force-gamemode-off", this.messages.get("force-gamemode-off").toString());
+        this.msgMap.put("difficulty-changed", this.messages.get("difficulty-changed").toString());
+        this.msgMap.put("whitelist-add-timeout", this.messages.get("whitelist-add-timeout").toString());
+        this.msgMap.put("whitelist-add-cancelled", this.messages.get("whitelist-add-cancelled").toString());
+        this.msgMap.put("whitelist-modify-instructions", this.messages.get("whitelist-modify-instructions").toString());
+        this.msgMap.put("whitelist-cleared", this.messages.get("whitelist-cleared").toString());
+        this.msgMap.put("whitelist-added", this.messages.get("whitelist-added").toString());
+        this.msgMap.put("whitelist-removed", this.messages.get("whitelist-removed").toString());
+        this.msgMap.put("whitelist-enabled", this.messages.get("whitelist-enabled").toString());
+        this.msgMap.put("whitelist-disabled", this.messages.get("whitelist-disabled").toString());
+        this.msgMap.put("monster-spawns-on", this.messages.get("monster-spawns-on").toString());
+        this.msgMap.put("monster-spawns-off", this.messages.get("monster-spawns-off").toString());
+        this.msgMap.put("animal-spawns-on", this.messages.get("animal-spawns-on").toString());
+        this.msgMap.put("animal-spawns-off", this.messages.get("animal-spawns-off").toString());
+        this.msgMap.put("npc-spawns-on", this.messages.get("npc-spawns-on").toString());
+        this.msgMap.put("npc-spawns-off", this.messages.get("npc-spawns-off").toString());
+        this.msgMap.put("allow-nether-on", this.messages.get("allow-nether-on").toString());
+        this.msgMap.put("allow-nether-off", this.messages.get("allow-nether-off").toString());
+        this.msgMap.put("allow-flight-on", this.messages.get("allow-flight-on").toString());
+        this.msgMap.put("allow-flight-off", this.messages.get("allow-flight-off").toString());
+        this.msgMap.put("generate-structures-on", this.messages.get("generate-structures-on").toString());
+        this.msgMap.put("generate-structures-off", this.messages.get("generate-structures-off").toString());
+        this.msgMap.put("kicked-player", this.messages.get("kicked-player").toString());
+        this.msgMap.put("got-kicked", this.messages.get("got-kicked").toString());
+        this.msgMap.put("banned-player", this.messages.get("banned-player").toString());
+        this.msgMap.put("unbanned-player", this.messages.get("unbanned-player").toString());
+        this.msgMap.put("got-banned", this.messages.get("got-banned").toString());
+        this.msgMap.put("ban-message", this.messages.get("ban-message").toString());
+        this.msgMap.put("pvp-enabled", this.messages.get("pvp-enabled").toString());
+        this.msgMap.put("pvp-disabled", this.messages.get("pvp-disabled").toString());
+        this.msgMap.put("regain-info", this.messages.get("regain-info").toString());
+        this.msgMap.put("opped-player", this.messages.get("opped-player").toString());
+        this.msgMap.put("deopped-player", this.messages.get("deopped-player").toString());
+        this.msgMap.put("must-be-online", this.messages.get("must-be-online").toString());
+        this.msgMap.put("leave-message", this.messages.get("leave-message").toString());
+        this.msgMap.put("motd-display", this.messages.get("motd-display").toString());
+        this.msgMap.put("motd-changed", this.messages.get("motd-changed").toString());
+        this.msgMap.put("motd-too-long", this.messages.get("motd-too-long").toString());
+        this.msgMap.put("server-join-online-guest-title", this.messages.get("server-join-online-guest-title").toString());
+        this.msgMap.put("server-join-offline-guest-title", this.messages.get("server-join-offline-guest-title").toString());
+        this.msgMap.put("server-join-online-owner-title", this.messages.get("server-join-online-owner-title").toString());
+        this.msgMap.put("server-join-offline-owner-title", this.messages.get("server-join-offline-owner-title").toString());
+        this.msgMap.put("server-stop-online-owner-title", this.messages.get("server-stop-online-owner-title").toString());
+        this.msgMap.put("server-stop-online-guest-title", this.messages.get("server-stop-online-guest-title").toString());
+        this.msgMap.put("server-stop-offline-owner-title", this.messages.get("server-stop-offline-owner-title").toString());
+        this.msgMap.put("server-stop-offline-guest-title", this.messages.get("server-stop-offline-guest-title").toString());
+        this.msgMap.put("other-server-not-online-title", this.messages.get("other-server-not-online-title").toString());
+        this.msgMap.put("no-server-title", this.messages.get("no-server-title").toString());
+        this.msgMap.put("other-no-server-title", this.messages.get("other-no-server-title").toString());
+        this.msgMap.put("server-expired-title", this.messages.get("server-expired-title").toString());
+        this.msgMap.put("max-memory-reached-title", this.messages.get("max-memory-reached-title").toString());
+        this.msgMap.put("max-servers-reached-title", this.messages.get("max-servers-reached-title").toString());
+        this.msgMap.put("max-players-count", this.messages.get("max-players-count").toString());
+        this.msgMap.put("no-player-specified-title", this.messages.get("no-player-specified-title").toString());
+        this.msgMap.put("sent-fallback-title", this.messages.get("sent-fallback-title").toString());
+        this.msgMap.put("not-player-server-title", this.messages.get("not-player-server-title").toString());
+        this.msgMap.put("template-doesnt-exist-title", this.messages.get("template-doesnt-exist-title").toString());
+        this.msgMap.put("no-templates-found-title", this.messages.get("no-templates-found-title").toString());
+        this.msgMap.put("create-start-title", this.messages.get("create-start-title").toString());
+        this.msgMap.put("have-server-title", this.messages.get("have-server-title").toString());
+        this.msgMap.put("delete-warning-title", this.messages.get("delete-warning-title").toString());
+        this.msgMap.put("recently-started-title", this.messages.get("recently-started-title").toString());
+        this.msgMap.put("added-to-queue-title", this.messages.get("added-to-queue-title").toString());
+        this.msgMap.put("removed-from-queue-title", this.messages.get("removed-from-queue-title").toString());
+        this.msgMap.put("queue-startup-title", this.messages.get("queue-startup-title").toString());
+        this.msgMap.put("help-ps-header", this.messages.get("help-ps-header").toString());
+        this.msgMap.put("help-ps-join", this.messages.get("help-ps-join").toString());
+        this.msgMap.put("help-ps-leave", this.messages.get("help-ps-leave").toString());
+        this.msgMap.put("help-ps-create", this.messages.get("help-ps-create").toString());
+        this.msgMap.put("help-ps-home", this.messages.get("help-ps-home").toString());
+        this.msgMap.put("help-ps-stop", this.messages.get("help-ps-stop").toString());
+        this.msgMap.put("help-ps-delete", this.messages.get("help-ps-delete").toString());
+        this.msgMap.put("help-ps-motd", this.messages.get("help-ps-motd").toString());
+        this.msgMap.put("help-ps-time", this.messages.get("help-ps-time").toString());
+        this.msgMap.put("help-ps-worlds", this.messages.get("help-ps-worlds").toString());
+        this.msgMap.put("help-ps-sharetime", this.messages.get("help-ps-sharetime").toString());
+        this.msgMap.put("help-psa-header", this.messages.get("help-psa-header").toString());
+        this.msgMap.put("help-psa-create", this.messages.get("help-psa-create").toString());
+        this.msgMap.put("help-psa-templates", this.messages.get("help-psa-templates").toString());
+        this.msgMap.put("help-psa-join", this.messages.get("help-psa-join").toString());
+        this.msgMap.put("help-psa-start", this.messages.get("help-psa-start").toString());
+        this.msgMap.put("help-psa-stop", this.messages.get("help-psa-stop").toString());
+        this.msgMap.put("help-psa-delete", this.messages.get("help-psa-delete").toString());
+        this.msgMap.put("help-psa-stopall", this.messages.get("help-psa-stopall").toString());
+        this.msgMap.put("help-psa-kill", this.messages.get("help-psa-kill").toString());
+        this.msgMap.put("help-psa-addtime", this.messages.get("help-psa-addtime").toString());
+        this.msgMap.put("help-psa-removetime", this.messages.get("help-psa-removetime").toString());
+        this.msgMap.put("help-psa-checktime", this.messages.get("help-psa-checktime").toString());
+        this.msgMap.put("help-psa-maxmem", this.messages.get("help-psa-maxmem").toString());
+        this.msgMap.put("help-psa-startmem", this.messages.get("help-psa-startmem").toString());
+        this.msgMap.put("help-psa-slots", this.messages.get("help-psa-slots").toString());
+        this.msgMap.put("help-psa-reload", this.messages.get("help-psa-reload").toString());
+        this.msgMap.put("help-psa-motd", this.messages.get("help-psa-motd").toString());
+        this.msgMap.put("help-mys-header", this.messages.get("help-mys-header").toString());
+        this.msgMap.put("help-mys-settings", this.messages.get("help-mys-settings").toString());
+        this.msgMap.put("help-mys-ban", this.messages.get("help-mys-ban").toString());
+        this.msgMap.put("help-mys-kick", this.messages.get("help-mys-kick").toString());
+        this.msgMap.put("help-mys-whitelist", this.messages.get("help-mys-whitelist").toString());
+        this.msgMap.put("help-mys-op", this.messages.get("help-mys-op").toString());
+        this.msgMap.put("help-mys-regain", this.messages.get("help-mys-regain").toString());
+        this.msgMap.put("help-mys-stop",  this.messages.get("help-mys-stop").toString());
         updateMsgs();
     }
 
@@ -771,7 +801,7 @@ public class PlayerServers {
         }
         
         if (!hashMap.isEmpty()) {
-            messages.put("messages", msgMap);
+            messages = new HashMap<>(msgMap);
             saveConfig(messages, "messages.yml");
             utils.debug("Saved updated messages.yml file.");
         }

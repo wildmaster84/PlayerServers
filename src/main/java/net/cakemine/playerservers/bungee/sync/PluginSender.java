@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.*;
 import net.md_5.bungee.api.config.*;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
 import net.md_5.bungee.config.*;
@@ -18,10 +19,12 @@ public class PluginSender
     PlayerServers pl;
     public List<Server> syncedServers;
     public String guisSerialized;
+    public String[] syncActions;
     ObjectMapper mapper = new ObjectMapper();
     public PluginSender(PlayerServers pl) {
         this.syncedServers = new ArrayList<Server>();
         this.pl = pl;
+        this.syncActions = new String[] { "debug", "version", "messages", "prefix", "fallback", "useExpire", "expiredate", "daysleft", "blockedcmds", "alwaysops", "timeleft", "expirecheck", "templates", "psCustomCmd", "guis" };
     }
     
     public void sendPluginMsg(Server server, ByteArrayDataOutput byteArrayDataOutput) {
@@ -42,16 +45,17 @@ public class PluginSender
             }
             String string = proxiedPlayer.getUniqueId().toString();
             this.sendStructuredMessage("reSync", string);
-            String[] array2;
-            String[] array = array2 = new String[] { "debug", "version", "messages", "prefix", "fallback", "useExpire", "expiredate", "daysleft", "blockedcmds", "alwaysops", "timeleft", "expirecheck", "templates", "psCustomCmd", "guis" };
-            for (String s : array2) {
+            for (String s : syncActions) {
                 if (this.pl.proxy.getPlayer(UUID.fromString(string)) == null) {
                     this.pl.utils.debug("Player returned null when sending server resync messages, aborting.");
                     return;
                 }
                 this.sendStructuredMessage(s, string);
             }
-            this.confirmSync(server, array.length);
+            this.pl.proxy.getScheduler().schedule(this.pl, () -> {
+            	this.confirmSync(server, syncActions.length);
+            }, 3L, TimeUnit.SECONDS);
+            
         }
     }
     

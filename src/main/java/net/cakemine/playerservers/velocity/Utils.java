@@ -175,6 +175,9 @@ public class Utils
         else {
         	this.pl.proxy.getScheduler()
         	  .buildTask(this.pl, () -> {
+        		  if (pl.proxy.getServer(s) == null) {
+        			  log(Level.SEVERE, "Server '" + s + "' returned null when trying to send " + proxiedPlayer.getUsername() + " to it! Server removed/shutdown/failed to start?");
+        		  }
         		  if (pl.proxy.getServer(s).get().getServerInfo() == null) {
                       log(Level.SEVERE, "Server info for server '" + s + "' returned null when trying to send " + proxiedPlayer.getUsername() + " to it! Server removed/shutdown/failed to start?");
                       return;

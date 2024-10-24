@@ -33,7 +33,7 @@ public class Controller implements Runnable {
         this.shutdown = false;
         this.ip = pl.wrapperAddress;
         this.port = pl.wrapperPort;
-        this.writeExecutor = Executors.newSingleThreadExecutor();
+        this.writeExecutor = Executors.newCachedThreadPool();
         this.retryExecutor = Executors.newScheduledThreadPool(1);
         this.readBuffer = ByteBuffer.allocate(1024);
         this.writeBuffer = ByteBuffer.allocate(1024);
@@ -65,23 +65,23 @@ public class Controller implements Runnable {
     }
 
     public void startWrapper() {
-        this.pl.utils.debug("PSWrapper starting up on port " + this.port + " from '" + this.pl.getDataFolder().getAbsolutePath() + File.separator + "scripts" + File.separator + "PSWrapper.jar'");
-        this.pl.utils.debug("PSWrapper using servers in folder: " + this.pl.serversFolder);
-        String[] array;
-        if (this.pl.debug) {
-            array = new String[] { "java", "-jar", "-Djava.util.logging.SimpleFormatter.format=%1$tH:%1$tM:%1$tS %4$s:%5$s%n", "PSWrapper.jar", String.valueOf(this.port), "debug" };
-        } else {
-            array = new String[] { "java", "-jar", "-Djava.util.logging.SimpleFormatter.format=%1$tH:%1$tM:%1$tS %4$s:%5$s%n", "PSWrapper.jar", String.valueOf(this.port) };
-        }
-        this.pl.proxy.getScheduler().buildTask(this.pl, () -> {
-        	ProcessBuilder directory = new ProcessBuilder(array).directory(new File(Controller.this.pl.getDataFolder(), "scripts"));
+    	this.pl.proxy.getScheduler().buildTask(this.pl, () -> {
+	        this.pl.utils.debug("PSWrapper starting up on port " + this.port + " from '" + this.pl.getDataFolder().getAbsolutePath() + File.separator + "scripts" + File.separator + "PSWrapper.jar'");
+	        this.pl.utils.debug("PSWrapper using servers in folder: " + this.pl.serversFolder);
+	        String[] array;
+	        if (this.pl.debug) {
+	            array = new String[] { "java", "-jar", "-Djava.util.logging.SimpleFormatter.format=%1$tH:%1$tM:%1$tS %4$s:%5$s%n", "PSWrapper.jar", String.valueOf(this.port), "debug" };
+	        } else {
+	            array = new String[] { "java", "-jar", "-Djava.util.logging.SimpleFormatter.format=%1$tH:%1$tM:%1$tS %4$s:%5$s%n", "PSWrapper.jar", String.valueOf(this.port) };
+	        }
+        	ProcessBuilder directory = new ProcessBuilder(array).directory(new File(this.pl.getDataFolder(), "scripts"));
             try {
                 directory.start();
                 Controller.this.pl.utils.log("PSWrapper started up.");
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
-        });
+        }).delay(3L, TimeUnit.SECONDS).schedule();
     }
 
     public void connect() {
@@ -102,7 +102,11 @@ public class Controller implements Runnable {
                         retryExecutor.schedule(this::connect, 15, TimeUnit.SECONDS);
                     }
             	}
-                
+            	try {
+                    Thread.sleep(5000L);
+                } catch (InterruptedException interruptedException) {
+                    Thread.currentThread().interrupt();
+                }
             }
         } catch (IOException ex) {}
     }
