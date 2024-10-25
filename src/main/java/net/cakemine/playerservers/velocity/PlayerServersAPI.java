@@ -338,7 +338,7 @@ public class PlayerServersAPI {
     }
     
     public File getDataFolder() {
-    	return this.pl.getDataFolder();
+    	return this.pl.configManager.getDataFolder();
     }
     
     @Deprecated

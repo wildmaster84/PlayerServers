@@ -1,6 +1,7 @@
 package net.cakemine.playerservers.velocity;
 
 import net.cakemine.playerservers.velocity.objects.StoredPlayer;
+import net.cakemine.playerservers.proxy.ConfigurationManager;
 import net.cakemine.playerservers.velocity.commands.PlayerServerAdmin;
 import net.cakemine.playerservers.velocity.commands.PlayerServerCMD;
 import net.cakemine.playerservers.velocity.wrapper.*;
@@ -10,10 +11,8 @@ import java.io.*;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
 import com.velocitypowered.api.event.EventManager;
 import com.velocitypowered.api.event.Subscribe;
@@ -29,9 +28,6 @@ import com.velocitypowered.api.scheduler.ScheduledTask;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.yaml.snakeyaml.DumperOptions;
-import org.yaml.snakeyaml.Yaml;
-
 public class PlayerServers {
 
     public ProxyServer proxy;
@@ -45,9 +41,8 @@ public class PlayerServers {
     public PlayerServerCMD playerServer;
     protected static PlayerServersAPI api;
     public Utils utils;
-    public Yaml yaml;
 
-    protected HashMap<String, Object> config;
+    public HashMap<String, Object> config;
     protected HashMap<String, String> messages;
     protected HashMap<String, Object> guis;
     protected HashMap<String, HashMap<String, Object>> online;
@@ -87,8 +82,8 @@ public class PlayerServers {
     public String wrapper;
     public HashMap<Player, RegisteredServer> usingHelper;
     protected Controller ctrl;
-    private Path dataDirectory;
     public static Logger logger;
+    public ConfigurationManager configManager;
     @Inject
     private PluginContainer container;
     public EventManager eventManager;
@@ -99,7 +94,6 @@ public class PlayerServers {
         this.instance = this;
         this.eventManager = eventManager;
         logger = proxyLogger;
-        this.dataDirectory = dataDirectory;
         this.serverManager = new ServerManager(this);
         this.expiryTracker = new ExpiryTracker(this);
         this.settingsManager = new SettingsManager(this);
@@ -107,6 +101,7 @@ public class PlayerServers {
         this.playerServerAdmin = new PlayerServerAdmin(this);
         this.sender = new PluginSender(this);
         this.utils = new Utils(this);
+        this.configManager = new ConfigurationManager(dataDirectory, this.utils);
 
         // Initialize collections
         this.permMap = new HashMap<>();
@@ -139,7 +134,6 @@ public class PlayerServers {
 
     @Subscribe
     public void onProxyInitialize(ProxyInitializeEvent event) {
-        initializeYaml();
         this.version = container.getDescription().getVersion().get();
         this.usingWindows = usingWindows();
         this.proxyAddress = this.utils.getProxyIp();
@@ -173,13 +167,6 @@ public class PlayerServers {
             ctrl.disconnect();
         }
         proxy.getScheduler().tasksByPlugin(instance).forEach(ScheduledTask::cancel);
-    }
-
-    private void initializeYaml() {
-        DumperOptions options = new DumperOptions();
-        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
-        options.setAllowUnicode(true);
-        this.yaml = new Yaml(options);
     }
 
     public boolean usingWindows() {
@@ -228,84 +215,23 @@ public class PlayerServers {
     }
 
     public void loadFiles() {
-        if (!getDataFolder().exists()) {
-            getDataFolder().mkdir();
+        if (!configManager.getDataFolder().exists()) {
+        	configManager.getDataFolder().mkdir();
         }
         
-        config = (HashMap<String, Object>) loadFile("config.yml");
-        messages = (HashMap<String, String>) (loadFile("messages.yml").get("messages") != null ? loadFile("messages.yml").get("messages") : loadFile("messages.yml"));
-        guis = (HashMap<String, Object>) loadFile("guis.yml");
+        config = (HashMap<String, Object>) configManager.loadFile("config.yml");
+        messages = (HashMap<String, String>) (configManager.loadFile("messages.yml").get("messages") != null ? configManager.loadFile("messages.yml").get("messages") : configManager.loadFile("messages.yml"));
+        guis = (HashMap<String, Object>) configManager.loadFile("guis.yml");
 
-        createDirectory("data/servers");
-        createDirectory("data/players");
-        createDirectory("servers");
+        configManager.createDirectory("data/servers");
+        configManager.createDirectory("data/players");
+        configManager.createDirectory("servers");
 
-        loadYamlFile("config.yml", config);
-        loadYamlFile("messages.yml", messages);
-        loadYamlFile("guis.yml", guis);
-    }
-
-    private HashMap<String, ?> loadFile(String fileName) {
-        File file = new File(getDataFolder(), fileName);
-        if (!file.exists()) {
-            copyResource(file);
-        }
-        InputStream inputStream;
-		try {
-			inputStream = new FileInputStream(file);
-			HashMap<String, Object> data = yaml.load(inputStream);
-
-			return data;
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		utils.log(Level.SEVERE, "Failed to load " + fileName);
-        return null;
+        configManager.loadYamlFile("config.yml", config);
+        configManager.loadYamlFile("messages.yml", messages);
+        configManager.loadYamlFile("guis.yml", guis);
     }
     
-    private HashMap<String, HashMap<String, String>> loadFile2(String fileName) {
-        File file = new File(getDataFolder(), fileName);
-        if (!file.exists()) {
-            copyResource(file);
-        }
-        InputStream inputStream;
-		try {
-			inputStream = new FileInputStream(file);
-			HashMap<String, HashMap<String, String>> data = yaml.load(inputStream);
-
-			return data;
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-        return null;
-    }
-
-    private void createDirectory(String path) {
-        File dir = new File(getDataFolder(), path.replace("/", File.separator));
-        utils.debug("Directory = " + dir.toString());
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
-    }
-
-    private void loadYamlFile(String fileName, HashMap<String, ?> targetMap) {
-        try (InputStream inputStream = new FileInputStream(getDataFolder().getPath() + File.separator + fileName)) {
-            targetMap = yaml.load(new InputStreamReader(inputStream, "UTF-8"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-    
-    private void loadMsgYamlFile(String fileName, HashMap<String, HashMap<String, String>> targetMap) {
-        try (InputStream inputStream = new FileInputStream(getDataFolder().getPath() + File.separator + fileName)) {
-            targetMap = yaml.load(new InputStreamReader(inputStream, "UTF-8"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     public void updateConfig() {
         boolean changed = false;
 
@@ -327,7 +253,7 @@ public class PlayerServers {
         changed |= updateConfigOption("debug", false);
 
         if (changed) {
-            saveConfig(config, "config.yml");
+        	configManager.saveConfig(config, "config.yml");
         }
     }
 
@@ -341,14 +267,7 @@ public class PlayerServers {
         return false;
     }
 
-    public void saveConfig(Object config, String fileName) {
-        File configFile = new File(getDataFolder(), fileName);
-        try (FileWriter writer = new FileWriter(configFile)) {
-            yaml.dump(config, writer);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+    
 
     public void loadConfig() {
         debug = (boolean) config.get("debug");
@@ -389,7 +308,7 @@ public class PlayerServers {
 
     private String resolveServersFolder() {
         if (config.get("servers-folder").equals("default")) {
-            return getDataFolder().getAbsolutePath() + File.separator + "servers";
+            return configManager.getDataFolder().getAbsolutePath() + File.separator + "servers";
         } else {
             return config.get("servers-folder").toString();
         }
@@ -410,11 +329,9 @@ public class PlayerServers {
     public void loadGUIs() {
         updateGUIs();
         try {
-            InputStream inputStream = new FileInputStream(getDataFolder().getPath() + File.separator + "guis.yml");
-            Map<String, Object> yamlData = yaml.load(new InputStreamReader(inputStream, "UTF-8"));
             ObjectMapper jsonMapper = new ObjectMapper();
-            sender.guisSerialized = jsonMapper.writeValueAsString(yamlData);
-        } catch (FileNotFoundException | JsonProcessingException | UnsupportedEncodingException e) {
+            sender.guisSerialized = jsonMapper.writeValueAsString(this.guis);
+        } catch (JsonProcessingException e) {
             sender.guisSerialized = null;
         }
     }
@@ -484,7 +401,7 @@ public class PlayerServers {
         	changed = true;
         }
         if (changed) {
-            saveConfig(guis, "guis.yml");
+        	configManager.saveConfig(guis, "guis.yml");
             utils.debug("Saved updated guis.yml file.");
         }
     }
@@ -802,27 +719,21 @@ public class PlayerServers {
         
         if (!hashMap.isEmpty()) {
             messages = new HashMap<>(msgMap);
-            saveConfig(messages, "messages.yml");
+            configManager.saveConfig(messages, "messages.yml");
             utils.debug("Saved updated messages.yml file.");
         }
     }
 
     public void clearOnlineServers() {
-        if (!getDataFolder().exists()) {
-            getDataFolder().mkdir();
+        if (!configManager.getDataFolder().exists()) {
+        	configManager.getDataFolder().mkdir();
         }
 
-        File onlineFile = new File(getDataFolder(), "online.yml");
-        if (!onlineFile.exists()) copyResource(onlineFile);
+        File onlineFile = new File(configManager.getDataFolder(), "online.yml");
+        if (!onlineFile.exists()) configManager.copyResource(onlineFile);
 
-        try (InputStream inputStream = new FileInputStream(getDataFolder().getPath() + File.separator + "online.yml")) {
-            online = yaml.load(new InputStreamReader(inputStream, "UTF-8"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        
-        online.put("servers", new HashMap<>());
-        saveConfig(online, "online.yml");
+        online = (HashMap<String, HashMap<String, Object>>) configManager.loadFile("online.yml");
+        configManager.saveConfig(online, "online.yml");
     }
 
     public void loadPlayer(UUID uuid, StoredPlayer player) {
@@ -830,29 +741,16 @@ public class PlayerServers {
         playerMapChanged = true;
     }
 
-    public void copyResource(File file) {
-        if (!file.exists()) {
-            try (InputStream resourceStream = PlayerServers.class.getClassLoader().getResourceAsStream(file.getName());
-                 FileOutputStream fileOutputStream = new FileOutputStream(file)) {
-                ByteStreams.copy(resourceStream, fileOutputStream);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
+    
 
     public void setupScripts() {
         // Example script setup logic
-        File scriptDir = new File(getDataFolder(), "scripts");
+        File scriptDir = new File(configManager.getDataFolder(), "scripts");
         utils.debug("scriptsDir = " + scriptDir);
         if (!scriptDir.exists()) {
             scriptDir.mkdir();
         }
-        copyResource(new File(getDataFolder(), "scripts" + File.separator + "PSWrapper.jar"));
-    }
-
-    public File getDataFolder() {
-        return dataDirectory.toFile();
+        configManager.copyResource(new File(configManager.getDataFolder(), "scripts" + File.separator + "PSWrapper.jar"));
     }
 
     public static PlayerServersAPI getApi() {

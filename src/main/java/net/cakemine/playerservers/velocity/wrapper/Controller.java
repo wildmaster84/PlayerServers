@@ -66,7 +66,7 @@ public class Controller implements Runnable {
 
     public void startWrapper() {
     	this.pl.proxy.getScheduler().buildTask(this.pl, () -> {
-	        this.pl.utils.debug("PSWrapper starting up on port " + this.port + " from '" + this.pl.getDataFolder().getAbsolutePath() + File.separator + "scripts" + File.separator + "PSWrapper.jar'");
+	        this.pl.utils.debug("PSWrapper starting up on port " + this.port + " from '" + this.pl.configManager.getDataFolder().getAbsolutePath() + File.separator + "scripts" + File.separator + "PSWrapper.jar'");
 	        this.pl.utils.debug("PSWrapper using servers in folder: " + this.pl.serversFolder);
 	        String[] array;
 	        if (this.pl.debug) {
@@ -74,7 +74,7 @@ public class Controller implements Runnable {
 	        } else {
 	            array = new String[] { "java", "-jar", "-Djava.util.logging.SimpleFormatter.format=%1$tH:%1$tM:%1$tS %4$s:%5$s%n", "PSWrapper.jar", String.valueOf(this.port) };
 	        }
-        	ProcessBuilder directory = new ProcessBuilder(array).directory(new File(this.pl.getDataFolder(), "scripts"));
+        	ProcessBuilder directory = new ProcessBuilder(array).directory(new File(this.pl.configManager.getDataFolder(), "scripts"));
             try {
                 directory.start();
                 Controller.this.pl.utils.log("PSWrapper started up.");

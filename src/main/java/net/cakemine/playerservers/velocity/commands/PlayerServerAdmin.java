@@ -874,7 +874,7 @@ public class PlayerServerAdmin implements SimpleCommand {
             sb.append("PlayerServers Debugger Output").append(property).append(property);
             sb.append("Time: " + currentTimeMillis).append(property);
             try {
-                File file = new File(pl.getDataFolder() + File.separator + "debug");
+                File file = new File(pl.configManager.getDataFolder() + File.separator + "debug");
                 if (!file.exists()) {
                     file.mkdir();
                 }
@@ -1001,7 +1001,7 @@ public class PlayerServerAdmin implements SimpleCommand {
                     writer.write(" | |-Synced: " + b + property);
                     if (pl.serverManager.isPlayerServer(name)) {
                         String serverUUID = pl.utils.getServerUUID(name);
-                        Yaml provider = this.pl.yaml;
+                        Yaml provider = this.pl.configManager.yaml;
                         File file4 = new File(pl.serversFolder + File.separator + serverUUID + File.separator + "spigot.yml");
                         if (file4.exists()) {
                         	HashMap<String, Object> load = null;
@@ -1143,7 +1143,7 @@ public class PlayerServerAdmin implements SimpleCommand {
             }
             catch (IOException ex3) {
                 pl.utils.sendMsg(commandSender, "&cFailed while creating/writing debug file!");
-                pl.utils.log(Level.SEVERE, "Failed while generating debug file at " + pl.getDataFolder() + File.separator + "debug" + File.separator + "debug-" + currentTimeMillis + ".txt");
+                pl.utils.log(Level.SEVERE, "Failed while generating debug file at " + pl.configManager.getDataFolder() + File.separator + "debug" + File.separator + "debug-" + currentTimeMillis + ".txt");
                 ex3.printStackTrace();
             }
             finally {

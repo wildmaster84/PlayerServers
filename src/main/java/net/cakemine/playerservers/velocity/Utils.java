@@ -29,7 +29,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class Utils
 {
-    PlayerServers pl;
+	PlayerServers pl;
     
     public Utils(PlayerServers pl) {
         this.pl = pl;
@@ -46,7 +46,7 @@ public class Utils
         if (s.contains("||")) {
             String[] split = s.split("\\|\\|");
             for (int length = split.length, i = 0; i < length; ++i) {
-                proxiedPlayer.sendMessage(this.pl.utils.color(this.pl.prefix + split[i]));
+                proxiedPlayer.sendMessage(color(this.pl.prefix + split[i]));
             }
         }
         else {
@@ -166,7 +166,7 @@ public class Utils
             return;
         }
         if (n <= 0) {
-            if (pl.proxy.getServer(s).get().getServerInfo() == null) {
+            if (pl.proxy.getServer(s) == null || pl.proxy.getServer(s).get().getServerInfo() == null) {
                 this.log(Level.SEVERE, "Server info for server '" + s + "' returned null when trying to send " + proxiedPlayer.getUsername() + " to it! Server removed/shutdown/failed to start?");
                 return;
             }
@@ -175,10 +175,7 @@ public class Utils
         else {
         	this.pl.proxy.getScheduler()
         	  .buildTask(this.pl, () -> {
-        		  if (pl.proxy.getServer(s) == null) {
-        			  log(Level.SEVERE, "Server '" + s + "' returned null when trying to send " + proxiedPlayer.getUsername() + " to it! Server removed/shutdown/failed to start?");
-        		  }
-        		  if (pl.proxy.getServer(s).get().getServerInfo() == null) {
+        		  if (pl.proxy.getServer(s) == null || pl.proxy.getServer(s).get().getServerInfo() == null) {
                       log(Level.SEVERE, "Server info for server '" + s + "' returned null when trying to send " + proxiedPlayer.getUsername() + " to it! Server removed/shutdown/failed to start?");
                       return;
                   }
@@ -274,7 +271,7 @@ public class Utils
     
     public void iteratePort() {
     	this.pl.config.put("next-port", (this.getNextPort() + 1));
-        this.pl.saveConfig(this.pl.config, "config.yml");
+        this.pl.configManager.saveConfig(this.pl.config, "config.yml");
     }
     
     public boolean isPortOpen(String s, int n) {
@@ -614,7 +611,7 @@ public class Utils
 		}
     }
     
-    protected void vCheck() {
+    public void vCheck() {
         this.pl.proxy.getScheduler().buildTask(pl, () -> {
         	String a = "spigot";
         	String b = "mc.";

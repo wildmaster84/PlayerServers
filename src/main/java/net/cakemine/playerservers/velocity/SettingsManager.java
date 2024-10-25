@@ -21,21 +21,20 @@ public class SettingsManager
         InputStream inputStream = null;
         Properties properties;
         try {
-        	File Sproperties = new File(this.pl.serversFolder + File.separator + uuid + File.separator + "server.properties");
-        	if(!Sproperties.exists()) Sproperties.mkdir();
-            inputStream = new FileInputStream(Sproperties);
-            
-			properties = new Properties();
-            properties.load(new InputStreamReader(inputStream));
-            return properties.getProperty(s2);
-		} catch (FileNotFoundException e) {
-			this.pl.utils.log(Level.WARNING, "Tried to get \"" + s2 + "\" setting from \"" + this.pl.serversFolder + File.separator + uuid + File.separator + "server.properties\" but it doesn't exist! Server files deleted?");
+            File file = new File(this.pl.serversFolder + File.separator + uuid + File.separator + "server.properties");
+            if (!file.exists()) {
+                this.pl.utils.log(Level.WARNING, "Tried to get \"" + s2 + "\" setting from \"" + this.pl.serversFolder + File.separator + uuid + File.separator + "server.properties\" but it doesn't exist! Server files deleted?");
+                return null;
+            }
+            inputStream = new FileInputStream(file);
+            properties = new Properties();
+            properties.load(inputStream);
+        }
+        catch (IOException ex) {
+            this.pl.utils.log(Level.WARNING, "Tried to get \"" + s2 + "\" setting from \"" + this.pl.serversFolder + File.separator + uuid + File.separator + "server.properties\" but it doesn't exist or isn't readable! Server files deleted?");
+            ex.printStackTrace();
             return null;
-		} catch (IOException e) {
-			this.pl.utils.log(Level.WARNING, "Tried to get \"" + s2 + "\" setting from \"" + this.pl.serversFolder + File.separator + uuid + File.separator + "server.properties\" but it doesn't exist or isn't readable! Server files deleted?");
-            e.printStackTrace();
-            return null;
-		}   
+        }   
         finally {
             if (inputStream != null) {
                 try {
@@ -46,6 +45,7 @@ public class SettingsManager
                 }
             }
         }
+        return properties.getProperty(s2);
     }
     
     public void changeSetting(String s, String s2, String s3) {

@@ -156,8 +156,8 @@ public class ServerManager
 
     private String[] buildStartupCommand(String serverUUID, String serversFolder, String port, String maxPlayers, String startMem, String maxMem) {
         String jarFile = getJar(serverUUID);
-        return new File(pl.getDataFolder().getAbsolutePath() + File.separator + "scripts" + File.separator + "start-screen.sh").exists() ?
-                new String[]{"sh", pl.getDataFolder().getAbsolutePath() + File.separator + "scripts" + File.separator + "start-screen.sh", serverUUID, pl.utils.getSrvName(serverUUID), serversFolder, startMem, maxMem, jarFile} :
+        return new File(pl.configManager.getDataFolder().getAbsolutePath() + File.separator + "scripts" + File.separator + "start-screen.sh").exists() ?
+                new String[]{"sh", pl.configManager.getDataFolder().getAbsolutePath() + File.separator + "scripts" + File.separator + "start-screen.sh", serverUUID, pl.utils.getSrvName(serverUUID), serversFolder, startMem, maxMem, jarFile} :
                 new String[]{"screen", "-dmS", pl.utils.getSrvName(serverUUID), "java", "-Xmx" + startMem, "-Xms" + maxMem, "-jar", jarFile};
     }
 
@@ -232,7 +232,7 @@ public class ServerManager
                         if (this.addedServers != null && this.addedServers.containsKey(s)) {
                             this.addedServers.remove(s);
                             this.pl.online.put("servers", this.addedServers);
-                            this.pl.saveConfig(this.pl.online, "online.yml");
+                            this.pl.configManager.saveConfig(this.pl.online, "online.yml");
                         }
                         this.countRam();
                     }
@@ -252,8 +252,8 @@ public class ServerManager
     public void wrapperStop(String s) {
         if (this.pl.wrapper.equalsIgnoreCase("screen")) {
             String[] array;
-            if (new File(this.pl.getDataFolder().getAbsolutePath() + File.separator + "scripts" + File.separator + "stop-screen.sh").exists()) {
-                array = new String[] { "sh", this.pl.getDataFolder().getAbsolutePath() + File.separator + "scripts" + File.separator + "stop-screen.sh", this.pl.utils.getSrvName(s) };
+            if (new File(this.pl.configManager.getDataFolder().getAbsolutePath() + File.separator + "scripts" + File.separator + "stop-screen.sh").exists()) {
+                array = new String[] { "sh", this.pl.configManager.getDataFolder().getAbsolutePath() + File.separator + "scripts" + File.separator + "stop-screen.sh", this.pl.utils.getSrvName(s) };
             }
             else {
                 array = new String[] { "screen", "-S", this.pl.utils.getSrvName(s), "-p", "0", "-X", "stuff", "stop \\\r" };
@@ -339,7 +339,7 @@ public class ServerManager
                 hashMap.put("motd", motd);
                 this.addedServers.put(serverName, hashMap);
                 this.pl.online.put("servers", this.addedServers);
-                this.pl.saveConfig(this.pl.online, "online.yml");
+                this.pl.configManager.saveConfig(this.pl.online, "online.yml");
             }
             this.countRam();
         }
@@ -365,7 +365,7 @@ public class ServerManager
             if (this.addedServers != null && this.addedServers.containsKey(s)) {
                 this.addedServers.remove(s);
                 this.pl.online.put("servers", this.addedServers);
-                this.pl.saveConfig(this.pl.online, "online.yml");
+                this.pl.configManager.saveConfig(this.pl.online, "online.yml");
             }
             this.countRam();
             this.tryQueue();

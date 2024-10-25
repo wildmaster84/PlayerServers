@@ -39,18 +39,18 @@ public class PlayerServer {
 		map = new HashMap<>();
 		uuid = serverUUID;
 		serverStore = new HashMap<>();
-		file = new File(this.pl.getDataFolder() + File.separator + "data" + File.separator + "servers" + File.separator + uuid.toString() + ".yml");
+		file = new File(this.pl.configManager.getDataFolder() + File.separator + "data" + File.separator + "servers" + File.separator + uuid.toString() + ".yml");
 		try {
 			if (!file.exists()) {
 				Files.createFile(file.toPath());
 				Files.write(file.toPath(), String.format("%s: {}", uuid.toString()).getBytes());
 	        }
-			InputStream inputStream2 = new FileInputStream(this.pl.getDataFolder().getPath() + File.separator + "data" + File.separator + "servers" + File.separator + uuid.toString() + ".yml");
 			this.pl.utils.debug("serverDir = " + file.toPath());
-			serverStore = this.pl.yaml.load(new InputStreamReader(inputStream2, "UTF-8"));
+			serverStore = (HashMap<String, HashMap<String, HashMap<String, String>>>) this.pl.configManager.loadFile("data" + File.separator + "servers" + File.separator + uuid.toString() + ".yml");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+				
 		loadServer();
 		
 	}
@@ -161,7 +161,7 @@ public class PlayerServer {
 	}
 	
 	public BufferedReader getServerLog() {
-	    File serversDir = new File(pl.getDataFolder(), "servers");
+	    File serversDir = new File(pl.configManager.getDataFolder(), "servers");
 	    File serverDir = new File(serversDir, uuid.toString());
 	    File logsDir = new File(serverDir, "logs");
 	    File log = new File(logsDir, "latest.log");
@@ -176,6 +176,6 @@ public class PlayerServer {
 	
 	public void save() {
 		serverStore.put(uuid.toString(), map);
-		this.pl.saveConfig(serverStore, "data" + File.separator + "servers" + File.separator + uuid.toString() + ".yml");
+		this.pl.configManager.saveConfig(serverStore, "data" + File.separator + "servers" + File.separator + uuid.toString() + ".yml");
 	}
 }

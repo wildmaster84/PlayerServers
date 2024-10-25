@@ -20,7 +20,7 @@ public class TemplateManager
     }
     
     public void loadTemplates() {
-        File file = new File(this.pl.getDataFolder() + File.separator + "templates");
+        File file = new File(this.pl.configManager.getDataFolder() + File.separator + "templates");
         if (!file.exists()) {
             this.defaultTemplate();
         }
@@ -75,16 +75,16 @@ public class TemplateManager
         if (file.isDirectory()) {
             File file2 = new File(file, "PlayerServers.yml");
             if (!file2.exists()) {
-                this.pl.copyResource(file2);
+                this.pl.configManager.copyResource(file2);
             }
-            return this.pl.yaml.load(this.getClass().getClassLoader().getResourceAsStream("PlayerServers.yml"));
+            return this.pl.configManager.yaml.load(this.getClass().getClassLoader().getResourceAsStream("PlayerServers.yml"));
         }
         return null;
     }
     
     public void saveTemplateConfig(File file) {
         if (file.isDirectory()) {
-            this.pl.saveConfig(this.templates.get(file), "PlayerServers.yml");
+            this.pl.configManager.saveConfig(this.templates.get(file), "PlayerServers.yml");
             this.loadTemplateConfig(file);
         }
     }
@@ -133,10 +133,10 @@ public class TemplateManager
     }
     
     public void defaultTemplate() {
-        File file = new File(this.pl.getDataFolder() + File.separator + "templates");
-        File file2 = new File(this.pl.getDataFolder() + File.separator + "templates" + File.separator + "default");
+        File file = new File(this.pl.configManager.getDataFolder() + File.separator + "templates");
+        File file2 = new File(this.pl.configManager.getDataFolder() + File.separator + "templates" + File.separator + "default");
         File file3 = new File(file2 + File.separator + "plugins");
-        File file4 = new File(this.pl.getDataFolder() + File.separator + "template");
+        File file4 = new File(this.pl.configManager.getDataFolder() + File.separator + "template");
         if (file4.exists() && (!file.exists() || !file2.exists())) {
             this.pl.utils.log(Level.WARNING, "Converting existing template to new multi template format.");
             if (!file.exists()) {
@@ -159,19 +159,19 @@ public class TemplateManager
         File file5 = new File(file2 + File.separator + "server.properties");
         this.pl.utils.debug("serverProp = " + file5.toString());
         if (!file5.exists()) {
-            this.pl.copyResource(file5);
+            this.pl.configManager.copyResource(file5);
         }
         File file6 = new File(file2 + File.separator + "spigot.yml");
         this.pl.utils.debug("spigotYml = " + file6.toString());
         if (!file6.exists()) {
-            this.pl.copyResource(file6);
+            this.pl.configManager.copyResource(file6);
         }
         this.templateDone();
     }
     
     public boolean templateDone() {
-        File file = new File(this.pl.getDataFolder(), "templates" + File.separator + "default" + File.separator + "add-spigot-jar-here.txt");
-        File file2 = new File(this.pl.getDataFolder(), "templates" + File.separator + "default");
+        File file = new File(this.pl.configManager.getDataFolder(), "templates" + File.separator + "default" + File.separator + "add-spigot-jar-here.txt");
+        File file2 = new File(this.pl.configManager.getDataFolder(), "templates" + File.separator + "default");
         if (file2.isDirectory()) {
             String[] list = file2.list();
             Pattern compile = Pattern.compile("(?i)(spigot|folia|server|paperspigot|craftbukkit|cauldron|kcauldron|minecraft-server|minecraft_server|forge)(.+)?(\\.jar)");
@@ -217,12 +217,12 @@ public class TemplateManager
     }
     
     public void linkPS(String template) {
-        File file = new File(this.pl.getDataFolder() + File.separator + "templates" + File.separator + template + File.separator + "plugins");
+        File file = new File(this.pl.configManager.getDataFolder() + File.separator + "templates" + File.separator + template + File.separator + "plugins");
         if (!file.exists()) {
             file.mkdir();
         }
         Pattern pattern = Pattern.compile("PlayerServers-[a-zA-Z0-9.-]+.jar");
-        File[] pluginFiles = this.pl.getDataFolder().getParentFile().listFiles((dir, name) -> pattern.matcher(name).matches());
+        File[] pluginFiles = this.pl.configManager.getDataFolder().getParentFile().listFiles((dir, name) -> pattern.matcher(name).matches());
         if (pluginFiles != null && pluginFiles.length > 0) {
             for (File plugin : pluginFiles) {
             	this.pl.utils.debug("pluginFile = " + plugin.getPath());

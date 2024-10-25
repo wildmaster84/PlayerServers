@@ -31,15 +31,14 @@ public class StoredPlayer {
 		playerInfo = new HashMap<>();
 		map = new HashMap<>();
 		uuid = playerUUID;
-		file = new File(this.pl.getDataFolder() + File.separator + "data" + File.separator + "players" + File.separator + uuid.toString() + ".yml");
+		file = new File(this.pl.configManager.getDataFolder() + File.separator + "data" + File.separator + "players" + File.separator + uuid.toString() + ".yml");
 		try {
 			if (!file.exists()) {
 				Files.createFile(file.toPath());
 				Files.write(file.toPath(), String.format("%s: {}", uuid.toString()).getBytes());
 	        }
-			InputStream inputStream2 = new FileInputStream(this.pl.getDataFolder().getPath() + File.separator + "data" + File.separator + "players" + File.separator + uuid.toString() + ".yml");
 			this.pl.utils.debug("playerDir = " + file.toPath());
-			playerStore = this.pl.yaml.load(new InputStreamReader(inputStream2, "UTF-8"));
+			playerStore = (HashMap<String, HashMap<String, HashMap<String, String>>>) this.pl.configManager.loadFile("data" + File.separator + "players" + File.separator + uuid.toString() + ".yml");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -114,6 +113,6 @@ public class StoredPlayer {
 	
 	public void save() {
 		playerStore.put(uuid.toString(), map);
-		this.pl.saveConfig(playerStore, "data" + File.separator + "players" + File.separator + uuid.toString() + ".yml");
+		this.pl.configManager.saveConfig(playerStore, "data" + File.separator + "players" + File.separator + uuid.toString() + ".yml");
 	}
 }
