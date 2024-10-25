@@ -32,6 +32,7 @@ public class PlayerServer {
 	HashMap<String, HashMap<String, String>> map;
 	File file;
 	final UUID uuid;
+	private BufferedReader serverLog;
 	public PlayerServer(UUID serverUUID, PlayerServers pl) {
 		status = Status.STOPPED;
 		this.pl = pl;
@@ -40,22 +41,8 @@ public class PlayerServer {
 		map = new HashMap<>();
 		uuid = serverUUID;
 		serverStore = new HashMap<>();
-		File parent = new File(this.pl.configManager.getDataFolder(), "data");
-		File servers = new File(parent, "servers");
-		file = new File(servers, uuid.toString() + ".yml");
-		try {
-			if (!file.exists()) {
-				Files.createFile(file.toPath());
-				Files.write(file.toPath(), String.format("%s: {}", uuid.toString()).getBytes());
-	        }
-			this.pl.utils.debug("serverDir = " + file.toPath());
-			serverStore = (HashMap<String, HashMap<String, HashMap<String, String>>>) this.pl.configManager.loadFile(file);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-				
+		setupFiles();
 		loadServer();
-		
 	}
 	
 	private void loadServer() {
@@ -164,17 +151,40 @@ public class PlayerServer {
 	}
 	
 	public BufferedReader getServerLog() {
-	    File serversDir = new File(pl.configManager.getDataFolder(), "servers");
+	    return serverLog;
+	}
+	
+	private void setupFiles() {
+		File serversDir = new File(pl.configManager.getDataFolder(), "servers");
 	    File serverDir = new File(serversDir, uuid.toString());
 	    File logsDir = new File(serverDir, "logs");
 	    File log = new File(logsDir, "latest.log");
-
-	    if (!serversDir.exists() || !logsDir.exists() || !log.exists()) {
-	        return null; // Only return null if the file doesn't exist
+	    if (!log.exists()) {
+	    	try {
+	    		logsDir.mkdirs();
+				Files.createFile(log.toPath());
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 	    }
-
+	    
 	    ServerLogReader serverLogReader = new ServerLogReader(log);
-	    return serverLogReader.getLogReader();
+	    serverLog = serverLogReader.getLogReader();
+	    
+	    File parent = new File(this.pl.configManager.getDataFolder(), "data");
+		File servers = new File(parent, "servers");
+		file = new File(servers, uuid.toString() + ".yml");
+		try {
+			if (!file.exists()) {
+				Files.createFile(file.toPath());
+				Files.write(file.toPath(), String.format("%s: {}", uuid.toString()).getBytes());
+	        }
+			this.pl.utils.debug("serverDir = " + file.toPath());
+			serverStore = (HashMap<String, HashMap<String, HashMap<String, String>>>) this.pl.configManager.loadFile(file);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public void save() {
