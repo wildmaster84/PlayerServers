@@ -67,6 +67,10 @@ public class ServerManager
     }
 
     private void startServer(String serverUUID, String srvName, String serversFolder, String startMem, String maxMem, CommandSource commandSource) {
+    	if (!serversFolder.matches("^[a-zA-Z0-9_-]+$")) {
+            pl.utils.log(Level.SEVERE, "Invalid server folder name: " + serversFolder);
+            return;
+        }
         ServerInfo serverInfo = createServerInfo(serverUUID, srvName);
         if (serverFilesExist(serverUUID)) {
             if (getJar(serverUUID) == null) {
@@ -130,6 +134,7 @@ public class ServerManager
         	                        pl.utils.sendMsg(owner, "&eConnecting to '" + srvName + "', please wait..");
         	                        this.pl.utils.movePlayer(owner, srvName, this.pl.joinDelay);
         	                    }
+        	                    reader.close();
         	                    isRunning = false;
         	                    break;
         	                }
@@ -155,9 +160,15 @@ public class ServerManager
 
     private String[] buildStartupCommand(String serverUUID, String serversFolder, String port, String maxPlayers, String startMem, String maxMem) {
         String jarFile = getJar(serverUUID);
+        String srvName = pl.utils.getSrvName(serverUUID);
+
+        // Validate parameters
+        if (!isValidParameter(srvName) || !isValidParameter(serversFolder) || !isValidParameter(port) || !isValidParameter(maxPlayers) || !isValidParameter(startMem) || !isValidParameter(maxMem) || !isValidParameter(jarFile)) {
+            throw new IllegalArgumentException("Invalid parameter provided for server startup command.");
+        }
         return new File(pl.configManager.getDataFolder().getAbsolutePath() + File.separator + "scripts" + File.separator + "start-screen.sh").exists() ?
-                new String[]{"sh", pl.configManager.getDataFolder().getAbsolutePath() + File.separator + "scripts" + File.separator + "start-screen.sh", serverUUID, pl.utils.getSrvName(serverUUID), serversFolder, startMem, maxMem, jarFile} :
-                new String[]{"screen", "-dmS", pl.utils.getSrvName(serverUUID), "java", "-Xmx" + startMem, "-Xms" + maxMem, "-jar", jarFile};
+        		new String[]{"sh", pl.configManager.getDataFolder().getAbsolutePath() + File.separator + "scripts" + File.separator + "start-screen.sh", serverUUID, srvName, serversFolder, startMem, maxMem, jarFile} :
+        			new String[]{"screen", "-dmS", srvName, "java", "-Xmx" + startMem, "-Xms" + maxMem, "-jar", jarFile};
     }
 
 
@@ -815,5 +826,8 @@ public class ServerManager
         else {
             this.pl.utils.debug("Didn't verify " + s + "'s server settings, because their server.properties doesn't exist (server deleted?)");
         }
+    }
+    private boolean isValidParameter(String param) {
+        return param != null && param.matches("^[a-zA-Z0-9._-]+$");
     }
 }

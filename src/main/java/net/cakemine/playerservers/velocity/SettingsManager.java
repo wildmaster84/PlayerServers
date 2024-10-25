@@ -14,6 +14,9 @@ public class SettingsManager
     }
     
     public boolean propExists(String s) {
+    	if (s.contains("..") || s.contains("/") || s.contains("\\")) {
+            throw new IllegalArgumentException("Invalid path component");
+        }
     	File parent = new File(this.pl.serversFolder, s);
         return new File(parent, "server.properties").exists();
     }
@@ -22,6 +25,9 @@ public class SettingsManager
         InputStream inputStream = null;
         Properties properties;
         try {
+        	if (uuid.contains("..") || uuid.contains("/") || uuid.contains("\\")) {
+                throw new IllegalArgumentException("Invalid path component");
+            }
         	File parent = new File(this.pl.serversFolder, uuid);
             File file = new File(parent, "server.properties");
             if (!file.exists()) {
@@ -57,6 +63,9 @@ public class SettingsManager
             InputStream inputStream = null;
             OutputStream outputStream = null;
             try {
+            	if (s.contains("..") || s.contains("/") || s.contains("\\")) {
+                    throw new IllegalArgumentException("Invalid path component");
+                }
             	File parent = new File(this.pl.serversFolder, s);
             	File Sproperties = new File(parent, "server.properties");
             	if(!Sproperties.exists()) Sproperties.mkdir();
