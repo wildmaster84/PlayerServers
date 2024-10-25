@@ -379,7 +379,10 @@ public class ServerManager
     }
     
     public boolean createServer(CommandSource sender, String s, String s2, File templateFile) {
-    	Player commandSender = (Player) sender;
+    	Player commandSender = null;
+    	if (sender instanceof Player) {
+    		commandSender = (Player)sender;
+    	}
         if (!this.pl.templateManager.templateDone()) {
             if (commandSender != null) {
                 this.pl.utils.sendMsg(commandSender, "&c&lYou must setup a default template before creating servers!||&e&oPut a server .jar file in the||&e&oBungee plugins/PlayerServers/templates/default folder.");
