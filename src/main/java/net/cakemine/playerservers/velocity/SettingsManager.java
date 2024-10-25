@@ -14,14 +14,16 @@ public class SettingsManager
     }
     
     public boolean propExists(String s) {
-        return new File(this.pl.serversFolder + File.separator + s + File.separator + "server.properties").exists();
+    	File parent = new File(this.pl.serversFolder, s);
+        return new File(parent, "server.properties").exists();
     }
     
     public String getSetting(String uuid, String s2) {
         InputStream inputStream = null;
         Properties properties;
         try {
-            File file = new File(this.pl.serversFolder + File.separator + uuid + File.separator + "server.properties");
+        	File parent = new File(this.pl.serversFolder, uuid);
+            File file = new File(parent, "server.properties");
             if (!file.exists()) {
                 this.pl.utils.log(Level.WARNING, "Tried to get \"" + s2 + "\" setting from \"" + this.pl.serversFolder + File.separator + uuid + File.separator + "server.properties\" but it doesn't exist! Server files deleted?");
                 return null;
@@ -55,12 +57,13 @@ public class SettingsManager
             InputStream inputStream = null;
             OutputStream outputStream = null;
             try {
-            	File Sproperties = new File(this.pl.serversFolder + File.separator + s + File.separator + "server.properties");
+            	File parent = new File(this.pl.serversFolder, s);
+            	File Sproperties = new File(parent, "server.properties");
             	if(!Sproperties.exists()) Sproperties.mkdir();
-                inputStream = new FileInputStream(this.pl.serversFolder + File.separator + s + File.separator + "server.properties");
+                inputStream = new FileInputStream(Sproperties);
                 Properties properties = new Properties();
                 properties.load(inputStream);
-                outputStream = new FileOutputStream(this.pl.serversFolder + File.separator + s + File.separator + "server.properties");
+                outputStream = new FileOutputStream(Sproperties);
                 properties.put(s2, s3);
                 properties.store(outputStream, "");
             }

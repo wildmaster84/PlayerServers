@@ -1,6 +1,7 @@
 package net.cakemine.playerservers.velocity;
 
 import net.cakemine.playerservers.velocity.objects.StoredPlayer;
+import net.cakemine.playerservers.velocity.objects.PlayerServer;
 import net.cakemine.playerservers.proxy.ConfigurationManager;
 import net.cakemine.playerservers.velocity.commands.PlayerServerAdmin;
 import net.cakemine.playerservers.velocity.commands.PlayerServerCMD;
@@ -179,6 +180,7 @@ public class PlayerServers {
         loadFiles();
         updateConfig();
         loadConfig();
+        loadServers();
         clearOnlineServers();
         this.version = "565421"; // Don't modify this!
         loadMsgs();
@@ -306,9 +308,11 @@ public class PlayerServers {
         }
     }
 
-    private String resolveServersFolder() {
+    public String resolveServersFolder() {
         if (config.get("servers-folder").equals("default")) {
-            return configManager.getDataFolder().getAbsolutePath() + File.separator + "servers";
+        	File folder = new File(this.configManager.getDataFolder().getAbsolutePath(), "servers");
+        	
+            return folder.toString();
         } else {
             return config.get("servers-folder").toString();
         }
@@ -724,6 +728,20 @@ public class PlayerServers {
         }
     }
 
+    public void loadServers() {
+    	File serversFolder = new File(this.serversFolder);
+        utils.debug("serverDir = " + this.serversFolder);
+        if (!serversFolder.exists()) {
+        	serversFolder.mkdirs();
+        }
+        if (serversFolder.listFiles() != null) {
+        	for (File serverFile : serversFolder.listFiles()) {
+        		serverManager.serverMap.put(serverFile.getName(), new PlayerServer(UUID.fromString(serverFile.getName()), this));
+            }
+        }
+        utils.log(serverManager.serverMap.size() + " player servers saved.");
+    }
+    
     public void clearOnlineServers() {
         if (!configManager.getDataFolder().exists()) {
         	configManager.getDataFolder().mkdir();

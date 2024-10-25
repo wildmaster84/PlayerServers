@@ -15,6 +15,7 @@ import com.velocitypowered.api.proxy.ServerConnection;
 
 import net.cakemine.playerservers.velocity.objects.PlayerServer;
 import net.cakemine.playerservers.velocity.objects.StoredPlayer;
+import net.cakemine.playerservers.velocity.objects.PlayerServer.Status;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -166,7 +167,12 @@ public class Utils
             return;
         }
         if (n <= 0) {
-            if (pl.proxy.getServer(s) == null || pl.proxy.getServer(s).get().getServerInfo() == null) {
+            if (pl.proxy.getServer(s) == null) {
+            	this.log("Server is offline or does not exist " + s);
+            	proxiedPlayer.sendMessage(this.color("&cServer is offline or does not exist! " + s));
+            	return;
+            } 
+            if (pl.proxy.getServer(s).get().getServerInfo() == null) {
                 this.log(Level.SEVERE, "Server info for server '" + s + "' returned null when trying to send " + proxiedPlayer.getUsername() + " to it! Server removed/shutdown/failed to start?");
                 return;
             }
@@ -175,7 +181,11 @@ public class Utils
         else {
         	this.pl.proxy.getScheduler()
         	  .buildTask(this.pl, () -> {
-        		  if (pl.proxy.getServer(s) == null || pl.proxy.getServer(s).get().getServerInfo() == null) {
+        		  if (pl.proxy.getServer(s) == null || pl.proxy.getServer(s).isEmpty()) {
+        			  log(Level.SEVERE, "Server info for server '" + s + "' returned null when trying to send " + proxiedPlayer.getUsername() + " to it! Server removed/shutdown/failed to start?");
+        			  return;
+        		  }
+        		  if (pl.proxy.getServer(s).get().getServerInfo() == null) {
                       log(Level.SEVERE, "Server info for server '" + s + "' returned null when trying to send " + proxiedPlayer.getUsername() + " to it! Server removed/shutdown/failed to start?");
                       return;
                   }

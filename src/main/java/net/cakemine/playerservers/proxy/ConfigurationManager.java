@@ -54,6 +54,24 @@ public class ConfigurationManager {
         return new HashMap<>();
     }
     
+    public HashMap<String, ?> loadFile(File file) {
+        if (!file.exists()) {
+            file.mkdir();
+        }
+        InputStream inputStream;
+		try {
+			inputStream = new FileInputStream(file);
+			HashMap<String, Object> data = yaml.load(inputStream);
+
+			return data;
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		utils.log(Level.SEVERE, "Failed to load " + file.getName());
+        return new HashMap<>();
+    }
+    
     public void loadYamlFile(String fileName, HashMap<String, ?> targetMap) {
         try (InputStream inputStream = new FileInputStream(getDataFolder().getPath() + File.separator + fileName)) {
             targetMap = yaml.load(new InputStreamReader(inputStream, "UTF-8"));

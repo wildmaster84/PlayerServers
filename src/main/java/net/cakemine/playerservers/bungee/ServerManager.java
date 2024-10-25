@@ -58,6 +58,8 @@ public class ServerManager
             } else {
             	pl.serverManager.serverMap.get(serverUUID.toString()).setStatus(Status.STOPPED);
             }
+        } else if (pl.serverManager.serverMap.get(serverUUID.toString()).getStatus() == Status.INSTALLING) {
+        	pl.utils.log("Server is still installing " + serverUUID);
         } else {
             pl.utils.log("Server already running for uuid " + serverUUID);
         }

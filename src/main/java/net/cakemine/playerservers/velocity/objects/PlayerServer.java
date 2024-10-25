@@ -33,20 +33,23 @@ public class PlayerServer {
 	File file;
 	final UUID uuid;
 	public PlayerServer(UUID serverUUID, PlayerServers pl) {
+		status = Status.STOPPED;
 		this.pl = pl;
 		customSettings = new HashMap<>();
 		settings = new HashMap<>();
 		map = new HashMap<>();
 		uuid = serverUUID;
 		serverStore = new HashMap<>();
-		file = new File(this.pl.configManager.getDataFolder() + File.separator + "data" + File.separator + "servers" + File.separator + uuid.toString() + ".yml");
+		File parent = new File(this.pl.configManager.getDataFolder(), "data");
+		File servers = new File(parent, "servers");
+		file = new File(servers, uuid.toString() + ".yml");
 		try {
 			if (!file.exists()) {
 				Files.createFile(file.toPath());
 				Files.write(file.toPath(), String.format("%s: {}", uuid.toString()).getBytes());
 	        }
 			this.pl.utils.debug("serverDir = " + file.toPath());
-			serverStore = (HashMap<String, HashMap<String, HashMap<String, String>>>) this.pl.configManager.loadFile("data" + File.separator + "servers" + File.separator + uuid.toString() + ".yml");
+			serverStore = (HashMap<String, HashMap<String, HashMap<String, String>>>) this.pl.configManager.loadFile(file);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

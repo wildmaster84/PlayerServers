@@ -501,7 +501,6 @@ public class PlayerServerCMD implements SimpleCommand {
                 else {
                     this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(string, this.pl.msgMap.get("server-join-offline-owner")));
                 }
-                this.pl.utils.movePlayer(proxiedPlayer, this.pl.utils.getSrvName(string), this.pl.joinDelay);
             }
             else {
                 if (this.pl.useTitles) {
@@ -510,7 +509,6 @@ public class PlayerServerCMD implements SimpleCommand {
                 else {
                     this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(string, this.pl.msgMap.get("server-join-online-owner")));
                 }
-                this.pl.utils.movePlayer(proxiedPlayer, this.pl.utils.getSrvName(string), this.pl.onlineJoinDelay);
             }
         }
         else if (this.pl.useTitles) {
