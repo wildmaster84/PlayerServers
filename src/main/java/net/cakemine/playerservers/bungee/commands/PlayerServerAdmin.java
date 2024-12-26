@@ -849,7 +849,11 @@ public class PlayerServerAdmin extends Command
                                     ex.printStackTrace();
                                 }
                                 if (load != null) {
-                                    writer.write(" | |-BungeeCord: " + load.getBoolean("settings.bungeecord"));
+                                	if (load.get("settings.bungeecord") == null) {
+                                		writer.write(" | |-BungeeCord: false");
+                                	} else {
+                                		writer.write(" | |-BungeeCord: " + load.getBoolean("settings.bungeecord"));
+                                	}
                                 }
                             }
                             else {

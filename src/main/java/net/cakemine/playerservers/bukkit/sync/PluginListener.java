@@ -191,6 +191,7 @@ public class PluginListener implements PluginMessageListener
                     break;
                 }
                 case "guis": {
+                	this.pl.utils.debug("input = " + utf2);
                     this.pl.gui.deserializeGUIs(utf2);
                     PluginSender sender15 = this.pl.sender;
                     ++sender15.syncCount;

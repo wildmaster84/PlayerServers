@@ -27,8 +27,8 @@ public class CustomGUI implements Listener
     public CustomGUI(PlayerServers pl) {
         this.title = "";
         this.pl = pl;
-        this.backButton = this.createItem(1, Material.RED_STAINED_GLASS_PANE, 14, "&c&lGo Back.", null);
-        this.fillItem = this.createItem(1, Material.WHITE_STAINED_GLASS_PANE, 0, " ", null);
+        this.backButton = this.createItem(1, (Material.matchMaterial("RED_STAINED_GLASS_PANE") == null ? Material.matchMaterial("STAINED_GLASS_PANE") : Material.matchMaterial("RED_STAINED_GLASS_PANE")), 14, "&c&lGo Back.", null);
+        this.fillItem = this.createItem(1, (Material.matchMaterial("WHITE_STAINED_GLASS_PANE") == null ? Material.matchMaterial("STAINED_GLASS_PANE") : Material.matchMaterial("WHITE_STAINED_GLASS_PANE")), 0, " ", null);
         this.items = new HashMap<>();
         this.listedPlayers = new HashMap<>();        
         pl.getServer().getPluginManager().registerEvents(this, pl);

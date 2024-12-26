@@ -1015,7 +1015,11 @@ public class PlayerServerAdmin implements SimpleCommand {
                                 ex.printStackTrace();
                             }
                             if (load != null) {
-                                writer.write(" | |-BungeeCord: " + (boolean)load.get("settings.bungeecord"));
+                            	if (load.get("settings.bungeecord") == null) {
+                            		writer.write(" | |-Velocity: true");
+                            	} else {
+                            		writer.write(" | |-BungeeCord: " + (boolean)load.get("settings.bungeecord"));
+                            	}
                             }
                         }
                         else {

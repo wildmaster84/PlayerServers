@@ -101,6 +101,10 @@ public class GUIManager {
     }
 
     private Material itemMaterial(String itemName) {
+    	if (Material.matchMaterial(itemName.split(":")[0]) == null) {
+    		this.pl.utils.debug(itemName + " could not be found!");
+    		return Material.BEDROCK;
+    	}
         return Material.matchMaterial(itemName.split(":")[0]);
     }
 

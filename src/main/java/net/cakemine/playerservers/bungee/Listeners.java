@@ -61,12 +61,12 @@ public class Listeners implements Listener
             String serverUUID = player.getUniqueId().toString();
             if (!this.pl.playerMap.containsKey(player.getUniqueId())) {
                 this.pl.loadPlayer(player.getUniqueId(), new StoredPlayer(player.getUniqueId(), this.pl));
-                if (this.pl.playerMap.get(player.getUniqueId()).getUsername() == null || !this.pl.playerMap.get(player.getUniqueId()).getUsername().equals(player.getName())) {
+                if (this.pl.playerMap.get(player.getUniqueId()).getUsername() == null || !this.pl.playerMap.get(player.getUniqueId()).getUsername().equalsIgnoreCase(player.getName())) {
                 	this.pl.utils.log(player.getName() + "'s name was changed, updating cache.");
                 	this.pl.playerMap.get(player.getUniqueId()).setPlayerinfo("username", player.getName());
                 }
             }
-            if (this.pl.serverManager.hasServer(player.getUniqueId().toString()) && !this.pl.serverManager.getServerInfo(serverUUID, "player-name").equals(player.getName())) {
+            if (this.pl.serverManager.hasServer(player.getUniqueId().toString()) && !this.pl.serverManager.getServerInfo(serverUUID, "player-name").equalsIgnoreCase(player.getName())) {
                 this.pl.utils.log(player.getName() + " has changed their name. Updating their server.");
                 if (this.pl.utils.getSrvName(serverUUID).equals(this.pl.serverManager.getServerInfo(serverUUID, "player-name"))) {
                     this.pl.serverManager.setServerInfo(serverUUID, "server-name", player.getName());

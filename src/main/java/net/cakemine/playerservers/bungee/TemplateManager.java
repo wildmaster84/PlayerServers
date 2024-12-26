@@ -187,7 +187,7 @@ public class TemplateManager
         File file2 = new File(this.pl.getDataFolder(), "templates" + File.separator + template);
         if (file2.isDirectory()) {
             String[] list = file2.list();
-            Pattern compile = Pattern.compile("(?i)(spigot|folia|server|paperspigot|craftbukkit|cauldron|kcauldron|minecraft-server|minecraft_server|forge)(.+)?(\\.jar)");
+            Pattern compile = Pattern.compile("(?i)(spigot|folia|server|paper|paperspigot|craftbukkit|cauldron|kcauldron|minecraft-server|minecraft_server|forge)(.+)?(\\.jar)");
             String[] array = list;
             for (int length = array.length, i = 0; i < length; ++i) {
                 if (compile.matcher(array[i]).find()) {

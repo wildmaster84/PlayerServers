@@ -333,14 +333,14 @@ public class PlayerServerCMD extends Command
     public void createCommand(CommandSender commandSender, String[] array) {
     	this.pl.utils.debug("createCommand Fired");
         ProxiedPlayer proxiedPlayer = (ProxiedPlayer)commandSender;
-        String string = proxiedPlayer.getUniqueId().toString();
+        String uuid = proxiedPlayer.getUniqueId().toString();
         File templateFile = null;
-        if (this.pl.useExpiry && !this.pl.resetExpiry && this.pl.serverManager.hasServer(string) && this.pl.expiryTracker.msLeft(string) < 0L && !this.pl.utils.hasPerm(commandSender, "playerservers.bypassexpire")) {
+        if (this.pl.useExpiry && !this.pl.resetExpiry && this.pl.serverManager.hasServer(uuid) && this.pl.expiryTracker.msLeft(uuid) < 0L && !this.pl.utils.hasPerm(commandSender, "playerservers.bypassexpire")) {
             if (this.pl.useTitles) {
-                this.pl.utils.sendTitle(proxiedPlayer, this.pl.utils.doPlaceholders(string, this.pl.msgMap.get("server-expired-title")));
+                this.pl.utils.sendTitle(proxiedPlayer, this.pl.utils.doPlaceholders(uuid, this.pl.msgMap.get("server-expired-title")));
             }
             else {
-                this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(string, this.pl.msgMap.get("server-expired")));
+                this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(uuid, this.pl.msgMap.get("server-expired")));
             }
             return;
         }
@@ -375,10 +375,10 @@ public class PlayerServerCMD extends Command
         }
         
         if (this.pl.useTitles) {
-            this.pl.utils.sendTitle(proxiedPlayer, this.pl.utils.doPlaceholders(string, this.pl.msgMap.get("create-start-title")));
+            this.pl.utils.sendTitle(proxiedPlayer, this.pl.utils.doPlaceholders(uuid, this.pl.msgMap.get("create-start-title")));
         }
         else {
-            this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(string, this.pl.msgMap.get("create-start")));
+            this.pl.utils.sendMsg(commandSender, this.pl.utils.doPlaceholders(uuid, this.pl.msgMap.get("create-start")));
         }
         this.pl.serverManager.createServer(proxiedPlayer, templateFile);
         this.proxy.getScheduler().schedule((Plugin)this.pl, (Runnable)new Runnable() {

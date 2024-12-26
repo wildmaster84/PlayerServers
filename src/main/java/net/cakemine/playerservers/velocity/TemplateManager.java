@@ -12,10 +12,10 @@ import java.nio.file.*;
 public class TemplateManager
 {
     PlayerServers pl;
-    public LinkedHashMap<File, Map<String, Object>> templates;
+    public HashMap<File, Map<String, Object>> templates;
     
     public TemplateManager(PlayerServers pl) {
-        this.templates = new LinkedHashMap<File, Map<String, Object>>();
+        this.templates = new HashMap<File, Map<String, Object>>();
         this.pl = pl;
     }
     
@@ -174,7 +174,7 @@ public class TemplateManager
         File file2 = new File(this.pl.configManager.getDataFolder(), "templates" + File.separator + "default");
         if (file2.isDirectory()) {
             String[] list = file2.list();
-            Pattern compile = Pattern.compile("(?i)(spigot|folia|server|paperspigot|craftbukkit|cauldron|kcauldron|minecraft-server|minecraft_server|forge)(.+)?(\\.jar)");
+            Pattern compile = Pattern.compile("(?i)(spigot|folia|server|paper|paperspigot|craftbukkit|cauldron|kcauldron|minecraft-server|minecraft_server|forge)(.+)?(\\.jar)");
             String[] array = list;
             for (int length = array.length, i = 0; i < length; ++i) {
                 if (compile.matcher(array[i]).find()) {
