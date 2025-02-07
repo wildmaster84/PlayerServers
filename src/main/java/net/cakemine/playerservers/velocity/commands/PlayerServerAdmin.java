@@ -648,7 +648,7 @@ public class PlayerServerAdmin implements SimpleCommand {
         }
         else {
             String uuid2 = this.pl.utils.getUUID(array[1]);
-            if (!this.pl.utils.hasJoined(array[1])) {
+            if (!this.pl.utils.hasJoined(uuid2)) {
                 this.pl.utils.sendMsg(commandSender, this.pl.msgMap.get("player-never-joined"));
             }
             else if (this.pl.serverManager.hasServer(uuid2)) {
@@ -699,7 +699,7 @@ public class PlayerServerAdmin implements SimpleCommand {
         }
         else {
             String uuid = this.pl.utils.getUUID(array[1]);
-            if (!this.pl.utils.hasJoined(array[1])) {
+            if (!this.pl.utils.hasJoined(uuid)) {
                 this.pl.utils.sendMsg(commandSender, this.pl.msgMap.get("player-never-joined"));
             }
             else if (this.pl.serverManager.hasServer(uuid)) {

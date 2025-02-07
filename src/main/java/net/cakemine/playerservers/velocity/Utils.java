@@ -7,6 +7,7 @@ import com.google.common.io.ByteStreams;
 
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.Optional;
 
 import com.google.gson.*;
 import com.velocitypowered.api.command.CommandSource;
@@ -15,7 +16,6 @@ import com.velocitypowered.api.proxy.ServerConnection;
 
 import net.cakemine.playerservers.velocity.objects.PlayerServer;
 import net.cakemine.playerservers.velocity.objects.StoredPlayer;
-import net.cakemine.playerservers.velocity.objects.PlayerServer.Status;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -167,7 +167,7 @@ public class Utils
             return;
         }
         if (n <= 0) {
-            if (pl.proxy.getServer(s) == null) {
+            if (pl.proxy.getServer(s).isEmpty()) {
             	this.log("Server is offline or does not exist " + s);
             	proxiedPlayer.sendMessage(this.color("&cServer is offline or does not exist! " + s));
             	return;
@@ -329,7 +329,7 @@ public class Utils
     }
     
     public boolean hasJoined(String s) {
-        return this.pl.playerMap.containsKey(s);
+        return this.pl.playerMap.containsKey(UUID.fromString(s));
     }
     
     public String getUUID(String s) {
@@ -771,14 +771,14 @@ public class Utils
     }
     
     public ServerConnection getCurrentServer(String s) {
-        Player player = this.pl.proxy.getPlayer(UUID.fromString(s)).get();
-        if (player == null) {
+        Optional<Player> player = this.pl.proxy.getPlayer(UUID.fromString(s));;
+        if (player.isEmpty()) {
             this.debug("getCurrentServer of " + s + " failed! Player was null.");
             return null;
         }
-        if (player.getCurrentServer() == null) {
+        if (player.get().getCurrentServer() == null) {
             this.debug("getCurrentServer of " + s + " failed! Player was found but server was null.");
         }
-        return player.getCurrentServer().get();
+        return player.get().getCurrentServer().get();
     }
 }
