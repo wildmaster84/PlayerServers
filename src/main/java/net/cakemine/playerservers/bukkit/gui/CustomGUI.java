@@ -68,7 +68,7 @@ public class CustomGUI implements Listener
     }
     
     public void fillInventory(Player player, Inventory inventory, int colorDurability) {
-        ItemStack fillItem = createItem(1, Material.LEGACY_STAINED_GLASS_PANE, colorDurability, " ", null);
+        ItemStack fillItem = createItem(1, (Material.matchMaterial("LEGACY_STAINED_GLASS_PANE") == null ? Material.matchMaterial("STAINED_GLASS_PANE") : Material.matchMaterial("LEGACY_STAINED_GLASS_PANE")), colorDurability, " ", null);
         for (int i = 0; i < inventory.getSize(); i++) {
             if (inventory.getItem(i) == null || inventory.getItem(i).getType() == Material.AIR) {
                 inventory.setItem(i, fillItem);
