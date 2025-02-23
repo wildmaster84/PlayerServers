@@ -641,16 +641,16 @@ public class ServerManager
     public String getJar(String s) {
         File serverFolder = this.getServerFolder(s);
         if (serverFolder.isDirectory()) {
-            String s2 = null;
-            for (String s3 : serverFolder.list()) {
-                if (s3.matches("(?i)(cauldron|kcauldron|forge)(.+)?(\\.jar)")) {
-                    return s3;
+            String jarName = null;
+            for (String fileName : serverFolder.list()) {
+                if (fileName.matches("(?i)(cauldron|kcauldron|forge)(.+)?(\\.jar)")) {
+                    return fileName;
                 }
-                if (s3.matches("(?i)(spigot|folia|server|paperspigot|craftbukkit|minecraft-server|minecraft_server)(.+)?(\\.jar)")) {
-                    s2 = s3;
+                if (fileName.matches("(?i)(spigot|folia|server|paper|paperspigot|craftbukkit|minecraft-server|minecraft_server)(.+)?(\\.jar)")) {
+                	jarName = fileName;
                 }
             }
-            return s2;
+            return jarName;
         }
         return null;
     }

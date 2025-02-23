@@ -85,12 +85,13 @@ public class Listeners {
             ServerInfo info = null;
             if (!player.getCurrentServer().isEmpty()) {
                 info = player.getCurrentServer().get().getServerInfo();
+                if (this.pl.serverManager.isPlayerServer(info.getName())) {
+                    this.pl.utils.debug("Kicked from a player server!");
+                    serverKickEvent.setResult(KickedFromServerEvent.RedirectPlayer.create(this.pl.proxy.getServer(this.pl.fallbackSrv).get(), (serverKickEvent.getServerKickReason().isEmpty() ? null : serverKickEvent.getServerKickReason().get())));
+                }
             }
             ServerInfo kicked = serverKickEvent.getServer().getServerInfo();
-            if (this.pl.serverManager.isPlayerServer(info.getName())) {
-                this.pl.utils.debug("Kicked from a player server!");
-                serverKickEvent.setResult(KickedFromServerEvent.RedirectPlayer.create(this.pl.proxy.getServer(this.pl.fallbackSrv).get(), (serverKickEvent.getServerKickReason().isEmpty() ? null : serverKickEvent.getServerKickReason().get())));
-            }
+            
             this.pl.utils.debug("currentSrv = " + String.valueOf(info) + " | kickedSrv = " + kicked);
             if ((info == null || info.equals(kicked)) && this.pl.usingHelper.containsKey(player)) {
                 this.pl.utils.debug(serverKickEvent.getClass() + " fired, " + player.getUsername() + " removed from helper map.");
